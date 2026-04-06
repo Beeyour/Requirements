@@ -9,29 +9,29 @@ from typing import List, Dict, Any
 
 AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "openai": {
-        "gpt-4o":           "GPT-4o",
-        "gpt-4o-mini":      "GPT-4o Mini",
+        "gpt-4o":           "gpt-5.4-nano",
+        "gpt-4o-mini":      "gpt-5.4-nano",
         "gpt-5.4-nano":      "gpt-5.4-nano",
-        "gpt-5.4-mini":    "GPT-5.4 mini",
+        "gpt-5.4-mini":    "gpt-5.4-nano",
     },
-    "anthropic": {
-        "claude-opus-4-5":              "Claude Opus 4.5",
-        "claude-sonnet-4-5":            "Claude Sonnet 4.5",
-        "claude-3-5-sonnet-20241022":   "Claude 3.5 Sonnet",
-        "claude-haiku-4-5":      "claude-haiku-4-5",
-    },
-    "google": {
-        "gemini-3.1-flash-lite-preview":  "Gemini 3.1 Flash Lite",  # by omar
-        "gemini-3-flash":    "Gemini 3 Flash",
-        "gemini-2.5-flash":  "Gemini 2.5 Flash",
-    },
+    # "anthropic": {
+    #     "claude-opus-4-5":              "Claude Opus 4.5",
+    #     "claude-sonnet-4-5":            "Claude Sonnet 4.5",
+    #     "claude-3-5-sonnet-20241022":   "Claude 3.5 Sonnet",
+    #     "claude-haiku-4-5":      "claude-haiku-4-5",
+    # },
+    # "google": {
+    #     "gemini-3.1-flash-lite-preview":  "Gemini 3.1 Flash Lite",  # by omar
+    #     "gemini-3-flash":    "Gemini 3 Flash",
+    #     "gemini-2.5-flash":  "Gemini 2.5 Flash",
+    # },
 }
 
 
 DEFAULT_PROVIDER = "google"  # by omar
 DEFAULT_MODEL    = "gemini-3.1-flash"   # by omar
-# DEFAULT_PROVIDER = "openai"
-# DEFAULT_MODEL    = "gpt-4o"
+DEFAULT_PROVIDER = "openai"
+DEFAULT_MODEL    = "gpt-5.4-nano"
 
 PROVIDER_LABELS = {
     "openai":    "OpenAI",
