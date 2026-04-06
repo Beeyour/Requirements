@@ -9,10 +9,10 @@ from typing import List, Dict, Any
 
 AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "openai": {
-        "gpt-4o":           "gpt-5.4-nano",
-        "gpt-4o-mini":      "gpt-5.4-nano",
-        "gpt-5.4-nano":      "gpt-5.4-nano",
-        "gpt-5.4-mini":    "gpt-5.4-nano",
+        "gpt-5.4-nano":           "GPT 4o",
+        "gpt-5.4-nano":      "GPT 4o Mini",
+        "gpt-5.4-nano":      "GPT 5.4 nano",
+        "gpt-5.4-nano":    "GPT 5.4 mini",
     },
     # "anthropic": {
     #     "claude-opus-4-5":              "Claude Opus 4.5",
@@ -28,8 +28,8 @@ AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
 }
 
 
-DEFAULT_PROVIDER = "google"  # by omar
-DEFAULT_MODEL    = "gemini-3.1-flash"   # by omar
+# DEFAULT_PROVIDER = "google"  # by omar
+# DEFAULT_MODEL    = "gemini-3.1-flash"   # by omar
 DEFAULT_PROVIDER = "openai"
 DEFAULT_MODEL    = "gpt-5.4-nano"
 
