@@ -10,8 +10,11 @@ from typing import List, Dict, Any
 AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "openai": {
         "gpt-5.4-nano":           "GPT 4o",
+    
         "gpt-5.4-nano":      "GPT 4o Mini",
+
         "gpt-5.4-nano":      "GPT 5.4 nano",
+
         "gpt-5.4-nano":    "GPT 5.4 mini",
     },
     # "anthropic": {
@@ -20,11 +23,11 @@ AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     #     "claude-3-5-sonnet-20241022":   "Claude 3.5 Sonnet",
     #     "claude-haiku-4-5":      "claude-haiku-4-5",
     # },
-    # "google": {
-    #     "gemini-3.1-flash-lite-preview":  "Gemini 3.1 Flash Lite",  # by omar
-    #     "gemini-3-flash":    "Gemini 3 Flash",
-    #     "gemini-2.5-flash":  "Gemini 2.5 Flash",
-    # },
+    "google": {
+        "gemini-3.1-flash-lite-preview":  "Gemini 3.1 Flash Lite",  # by omar
+        "gemini-3.1-flash-lite-preview":    "Gemini 3 Flash",
+        # "gemini-2.5-flash":  "Gemini 2.5 Flash",
+    },
 }
 
 
