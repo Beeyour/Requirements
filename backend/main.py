@@ -10,11 +10,7 @@ app = FastAPI(title="SRS Analyst API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=["*"],  # هذا التغيير الجوهري: يسمح بالدخول من أي IP
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

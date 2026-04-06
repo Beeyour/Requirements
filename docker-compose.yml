@@ -12,7 +12,7 @@ services:
 
   # 2. خدمة تطبيق FastAPI
   backend:
-    build: .
+    build: ./backend
     container_name: fastapi_app
     ports:
       - "8000:8000"
@@ -21,3 +21,10 @@ services:
       - DATABASE_URL=postgresql://postgres:your_password_here@db:5432/srs_analyst
     depends_on:
       - db
+  frontend:
+    build: ./frontend
+    container_name: react_frontend
+    ports:
+      - "5173:5173"  # المنفذ اللي بتدخل منه للموقع
+    depends_on:
+      - backend
