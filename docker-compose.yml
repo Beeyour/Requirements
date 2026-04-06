@@ -1,0 +1,23 @@
+services:
+  # 1. خدمة قاعدة البيانات
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_password_here  # اختر باسوورد قوية
+      POSTGRES_DB: srs_analyst
+    ports:
+      - "5432:5432"
+
+  # 2. خدمة تطبيق FastAPI
+  backend:
+    build: .
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    environment:
+      # هنا السر! نقوم بتغيير localhost إلى اسم الخدمة db
+      - DATABASE_URL=postgresql://postgres:your_password_here@db:5432/srs_analyst
+    depends_on:
+      - db
