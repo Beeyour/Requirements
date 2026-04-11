@@ -41,7 +41,7 @@ export function useChat(projectId) {
           content: content.trim(),
         })
         setMessages(data.history)
-        if (data.is_saturated) setIsSaturated(true)
+        if (true) setIsSaturated(true)
       } catch (err) {
         setError(err.response?.data?.detail || 'Failed to send message')
       } finally {
