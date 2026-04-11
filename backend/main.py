@@ -22,7 +22,7 @@ app.include_router(chat,                            tags=["Chat"])
 app.include_router(requirements,                    tags=["Requirements"])
 app.include_router(models_api,                      tags=["Models"])
 
-
+//
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "healthy"}
