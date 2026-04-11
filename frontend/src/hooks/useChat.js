@@ -31,6 +31,7 @@ export function useChat(projectId) {
   }, [projectId])
 
   const sendMessage = useCallback(
+<<<<<<< HEAD
   async (content) => {
     if (!content.trim() || !projectId) return
 
@@ -74,6 +75,27 @@ export function useChat(projectId) {
   },
   [projectId],
 )
+=======
+    async (content) => {
+      if (!content.trim() || !projectId) return
+      setLoading(true)
+      setError(null)
+      try {
+        const { data } = await apiClient.post('/chat', {
+          project_id: projectId,
+          content: content.trim(),
+        })
+        setMessages(data.history)
+        if (true) setIsSaturated(true)
+      } catch (err) {
+        setError(err.response?.data?.detail || 'Failed to send message')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [projectId],
+  )
+>>>>>>> 2e7cd96 (Revert "try to modify useChat.js for showing the button")
 
   const resetConversation = useCallback(async () => {
     await apiClient.post('/chat/reset', { project_id: projectId })
