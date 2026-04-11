@@ -3,4 +3,8 @@ __pycache__/
 .env
 venv/
 .DS_Store
+<<<<<<< HEAD
 docker-compose.override.yml
+=======
+node_modules/
+>>>>>>> 9c746a3 (changes to deploy on vercel)
