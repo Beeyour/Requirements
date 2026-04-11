@@ -4,7 +4,7 @@ export default function ChatMessage({ message }) {
   const time = new Date().toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
-  })
+  })//
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
