@@ -55,8 +55,13 @@ export default function InterviewPage() {
   }, [messages, loading])
 
   const { isListening, toggleListening } = useVoiceToText((transcript) => {
+<<<<<<< HEAD
     setInput((prev) => prev + (prev ? ' ' : '') + transcript);
   });
+=======
+  setInput((prev) => prev + (prev ? ' ' : '') + transcript);
+});
+>>>>>>> 1960d1a (add voice to text feature)
   const handleSend = async (e) => {
     e.preventDefault()
     if (!input.trim() || loading) return
@@ -194,6 +199,7 @@ export default function InterviewPage() {
               style={{ minHeight: '44px' }}
             />
             {/* MICROPHONE BUTTON */}
+<<<<<<< HEAD
             <button
               type="button"
               onClick={toggleListening}
@@ -204,6 +210,19 @@ export default function InterviewPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </button>
+=======
+  <button
+    type="button"
+    onClick={toggleListening}
+    className={`p-3 rounded-xl transition-colors flex-shrink-0 ${
+      isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+    }`}
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+    </svg>
+  </button>
+>>>>>>> 1960d1a (add voice to text feature)
             <button
               type="submit"
               disabled={loading || !input.trim()}
