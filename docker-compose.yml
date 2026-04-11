@@ -13,6 +13,7 @@ services:
       retries: 5
 
   backend:
+<<<<<<< HEAD
       build: ./backend
       container_name: fastapi_app
       ports:
@@ -24,6 +25,17 @@ services:
           condition: service_healthy
 
 
+=======
+    build: ./backend
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    environment:
+      # هنا السر! نقوم بتغيير localhost إلى اسم الخدمة db
+      - DATABASE_URL=postgresql://postgres:password@localhost:5432/srs_analyst
+    depends_on:
+      - db
+>>>>>>> c4bd56f (configuring the docker fastapi container)
   frontend:
     build: ./frontend
     container_name: react_frontend
