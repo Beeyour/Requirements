@@ -17,7 +17,7 @@ class ConversationHistory(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), index=True, nullable=False)
     role = Column(SQLEnum(ChatRole), default=ChatRole.USER, nullable=False)
     content = Column(Text, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.utc)
     is_archived = Column(Boolean, default=False, nullable=False)
 
     project = relationship("Project", back_populates="conversations")

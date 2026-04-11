@@ -1,10 +1,10 @@
 export default function ChatMessage({ message }) {
   const isUser = message.role === 'user'
 
-  const time = new Date().toLocaleTimeString([], {
+  const time = new Date(message.timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
-  })//
+  })
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
