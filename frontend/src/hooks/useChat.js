@@ -32,6 +32,9 @@ export function useChat(projectId) {
 
   const sendMessage = useCallback(
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 14be973 (try to solve the issue on user bubble chat)
   async (content) => {
     if (!content.trim() || !projectId) return
 
@@ -75,6 +78,7 @@ export function useChat(projectId) {
   },
   [projectId],
 )
+<<<<<<< HEAD
 =======
     async (content) => {
       if (!content.trim() || !projectId) return
@@ -96,6 +100,8 @@ export function useChat(projectId) {
     [projectId],
   )
 >>>>>>> 2e7cd96 (Revert "try to modify useChat.js for showing the button")
+=======
+>>>>>>> 14be973 (try to solve the issue on user bubble chat)
 
   const resetConversation = useCallback(async () => {
     await apiClient.post('/chat/reset', { project_id: projectId })
