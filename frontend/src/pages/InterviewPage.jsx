@@ -56,12 +56,17 @@ export default function InterviewPage() {
 
   const { isListening, toggleListening } = useVoiceToText((transcript) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     setInput((prev) => prev + (prev ? ' ' : '') + transcript);
   });
 =======
   setInput((prev) => prev + (prev ? ' ' : '') + transcript);
 });
 >>>>>>> 1960d1a (add voice to text feature)
+=======
+    setInput((prev) => prev + (prev ? ' ' : '') + transcript);
+  });
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
   const handleSend = async (e) => {
     e.preventDefault()
     if (!input.trim() || loading) return
@@ -114,6 +119,7 @@ export default function InterviewPage() {
 
   return (
 <<<<<<< HEAD
+<<<<<<< HEAD
     <div className="h-screen bg-slate-50 flex flex-col"> {/* Changed min-h-screen to h-screen */}
 
       {/* --- STICKY HEADER WRAPPER --- */}
@@ -141,25 +147,15 @@ export default function InterviewPage() {
     {/* --- STICKY HEADER WRAPPER --- */}
     <div className="sticky top-0 z-50 bg-white">
       <Navbar projectName={project?.app_name} backTo="/" backLabel="Dashboard" />
+=======
+    <div className="h-screen bg-slate-50 flex flex-col"> {/* Changed min-h-screen to h-screen */}
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
 
-      {/* Model badge bar */}
-      {project && (
-        <div className="border-b border-slate-100 px-6 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span>Model:</span>
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-medium ${providerColorClass}`}>
-              {PROVIDER_LABELS[project.model_provider] || project.model_provider} — {currentModelName}
-            </span>
-          </div>
-          <button
-            onClick={() => { setPendingModel(currentModelKey); setShowModelModal(true) }}
-            className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
-          >
-            Change
-          </button>
-        </div>
-      )}
+      {/* --- STICKY HEADER WRAPPER --- */}
+      <div className="sticky top-0 z-50 bg-white">
+        <Navbar projectName={project?.app_name} backTo="/" backLabel="Dashboard" />
 
+<<<<<<< HEAD
       {/* SRS Banner */}
       {isSaturated && (
         <div className="bg-green-50 border-b border-green-200 px-6 py-3 flex items-center justify-between">
@@ -169,6 +165,23 @@ export default function InterviewPage() {
             </svg>
             <strong>Information gathering complete.</strong> Ready to generate your SRS document.
 >>>>>>> 4a82795 (InterviewPage navbar stick on top)
+=======
+        {/* Model badge bar */}
+        {project && (
+          <div className="border-b border-slate-100 px-6 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span>Model:</span>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-medium ${providerColorClass}`}>
+                {PROVIDER_LABELS[project.model_provider] || project.model_provider} — {currentModelName}
+              </span>
+            </div>
+            <button
+              onClick={() => { setPendingModel(currentModelKey); setShowModelModal(true) }}
+              className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
+            >
+              Change
+            </button>
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
           </div>
         )}
 
@@ -180,6 +193,9 @@ export default function InterviewPage() {
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
               <strong>Information gathering complete.</strong> Ready to generate your SRS document.
             </div>
             <button
@@ -195,6 +211,7 @@ export default function InterviewPage() {
               )}
               {generating ? 'Generating…' : 'Generate SRS'}
             </button>
+<<<<<<< HEAD
 
           </div>
         )}
@@ -210,6 +227,13 @@ export default function InterviewPage() {
     </div>
     {/* --- END STICKY HEADER --- */}
 >>>>>>> 4a82795 (InterviewPage navbar stick on top)
+=======
+
+          </div>
+        )}
+      </div>
+      {/* --- END STICKY HEADER --- */}
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full scrollbar-hide">
         {error && (
@@ -246,6 +270,9 @@ export default function InterviewPage() {
             />
             {/* MICROPHONE BUTTON */}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
             <button
               type="button"
               onClick={toggleListening}
@@ -256,6 +283,7 @@ export default function InterviewPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </button>
+<<<<<<< HEAD
 =======
   <button
     type="button"
@@ -269,6 +297,8 @@ export default function InterviewPage() {
     </svg>
   </button>
 >>>>>>> 1960d1a (add voice to text feature)
+=======
+>>>>>>> e5ecc7d (InterviewPage navbar stick on top)
             <button
               type="submit"
               disabled={loading || !input.trim()}
