@@ -4,12 +4,16 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from backend.database import Base
 
+<<<<<<< HEAD
 class ChatRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
 
 # Chat history and context management for AI interactions.
+=======
+#
+>>>>>>> ac43216 (test)
 class ConversationHistory(Base):
     __tablename__ = "conversation_history"
 
