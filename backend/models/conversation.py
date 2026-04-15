@@ -5,6 +5,7 @@ from datetime import datetime
 from backend.database import Base
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class ChatRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"
@@ -14,6 +15,9 @@ class ChatRole(str, enum.Enum):
 =======
 #
 >>>>>>> ac43216 (test)
+=======
+
+>>>>>>> 5ac59ce (synchronize the backend with main)
 class ConversationHistory(Base):
     __tablename__ = "conversation_history"
 
