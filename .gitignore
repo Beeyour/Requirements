@@ -2,9 +2,13 @@ __pycache__/
 *.pyc
 .env
 venv/
+<<<<<<< HEAD
 .DS_Store
 <<<<<<< HEAD
 docker-compose.override.yml
 =======
 node_modules/
 >>>>>>> 9c746a3 (changes to deploy on vercel)
+=======
+.DS_Store
+>>>>>>> 083f654 (try to solve the history time issue)
