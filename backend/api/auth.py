@@ -50,6 +50,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return Token(access_token=token, token_type="bearer", user_id=user.id, email=user.email)
 
 
+
+
 @router.post("/login", response_model=Token)
 def login(user_data: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_data.email).first()

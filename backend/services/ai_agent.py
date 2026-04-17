@@ -167,4 +167,3 @@ def detect_conflicts(
         return parse_json_response(raw)
     except Exception:
         return {"has_conflicts": False, "conflicts": []}
-//
