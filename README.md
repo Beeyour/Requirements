@@ -1,5 +1,11 @@
 # Project Management Commands
 
+
+## 🛠️ Development Commands
+This project is managed using `Docker` and a `Makefile`. To see all available commands, run:
+```bash
+make help
+
 ### 🐳 Docker Compose (Infrastructure)
 Used for containerization and environment isolation.
 - **Start Services:** `sudo docker compose up -d`
@@ -18,3 +24,4 @@ Used for visualizing the project structure.
 ### ⚡ Uvicorn (ASGI Server)
 The engine running the FastAPI application inside Docker.
 - **Status Check:** Included in Docker logs.
+

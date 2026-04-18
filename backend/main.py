@@ -1,16 +1,16 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from api import auth, projects, chat, requirements, models_api
 import models
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="SRS Analyst API", version="1.0.0")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

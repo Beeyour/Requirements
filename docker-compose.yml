@@ -4,16 +4,13 @@ services:
     container_name: postgres_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_password_here
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: srs_analyst
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d srs_analyst"]
       interval: 5s
       timeout: 5s
       retries: 5
-
 
   backend:
       build: ./backend
@@ -21,12 +18,12 @@ services:
       ports:
         - "8000:8000"
       environment:
-        - DATABASE_URL=postgresql://postgres:your_password_here@db:5432/srs_analyst
+        - DATABASE_URL=postgresql://postgres:${DATABASE_PASSWORD}@db:5432/srs_analyst
       depends_on:
         db:
           condition: service_healthy
-      volumes:
-        - ./backend:/app
+
+
   frontend:
     build: ./frontend
     container_name: react_frontend
