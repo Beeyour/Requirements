@@ -19,7 +19,6 @@ class UMLResponse(BaseModel):
     class Config:
         from_attributes = True
 
-//
 def _get_project_or_404(db, project_id, user_id):
     project = (
         db.query(Project)

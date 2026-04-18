@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 # ---------------------------------------------------------------------------
 
 
-# has edting by omar 
+# has edting by omar
 AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "openai": {
         "gpt-5.4-nano":           "GPT 5.4",
