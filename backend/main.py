@@ -7,6 +7,7 @@ import models
 
 app = FastAPI(title="SRS Analyst API", version="1.2.0")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
