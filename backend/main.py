@@ -26,7 +26,7 @@ app.include_router(auth,        prefix="/auth",     tags=["Authentication"])
 app.include_router(projects,    prefix="/projects", tags=["Projects"])
 app.include_router(chat,        prefix="/chat",     tags=["Chat"]) # Added prefix for clarity
 app.include_router(requirements,prefix="/req",      tags=["Requirements"]) # Optional prefix
-app.include_router(uml,         prefix="/uml",      tags=["UML Generation"]) # Register UML
+# app.include_router(uml,         prefix="/uml",      tags=["UML Generation"]) # Register UML
 app.include_router(models_api,  prefix="/info",     tags=["Models Info"])
 
 @app.get("/health", tags=["Health"])
