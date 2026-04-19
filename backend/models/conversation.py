@@ -1,15 +1,21 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean
+import enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
 
+class ChatRole(str, enum.Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
 
+# Chat history and context management for AI interactions.
 class ConversationHistory(Base):
     __tablename__ = "conversation_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    role = Column(String(50), nullable=False)       # "user" or "assistant"
+    project_id = Column(Integer, ForeignKey("projects.id"), index=True, nullable=False)
+    role = Column(SQLEnum(ChatRole), default=ChatRole.USER, nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     is_archived = Column(Boolean, default=False, nullable=False)

@@ -5,7 +5,7 @@ from database import engine, Base
 from api import auth, projects, chat, requirements, models_api
 import models
 
-app = FastAPI(title="SRS Analyst API", version="1.1.0")
+app = FastAPI(title="SRS Analyst API", version="1.2.0")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
 
 app.add_middleware(
