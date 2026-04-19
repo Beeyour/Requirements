@@ -38,5 +38,5 @@ db-revision: ## 📝 Generate a new database migration (Alembic)
 db-upgrade: ## ⚙️ Apply pending database migrations to PostgreSQL
 	sudo docker compose exec backend alembic upgrade head
 
-prod-up:
+prod-up: ##  run on server
 	sudo docker compose -f docker-compose.yml up -d --build
