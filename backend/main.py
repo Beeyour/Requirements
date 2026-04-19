@@ -5,7 +5,7 @@ from database import engine, Base
 from api import auth, projects, chat, requirements, models_api, uml # Import uml here
 import models # Crucial for table creation
 
-app = FastAPI(title="SRS Analyst API", version="1.2.0")
+app = FastAPI(title="SRS Analyst API", version="1.3.0")
 
 # Setup CORS
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*")

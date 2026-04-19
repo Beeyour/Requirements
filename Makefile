@@ -29,7 +29,7 @@ logs: ## 📡 Follow real-time backend logs
 tree: ## 📁 Display a clean project structure tree
 	tree -I 'node_modules|venv|__pycache__|.git|.pytest_cache|.alembic'
 
-treeBackend: ## Display a clean project structure tree fo backend
+tree-backend: ## Display a clean project structure tree fo backend
 	tree -I 'node_modules|frontend|venv|__pycache__|.git|.pytest_cache'
 
 db-revision: ## 📝 Generate a new database migration (Alembic)
