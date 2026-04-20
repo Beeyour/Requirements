@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime
-from database import get_db
-from models import User
-from .dependencies import get_current_user
-from schemas.uml import UMLResponse
-from services import uml_service
+from backend.database import get_db
+from backend.models import User
+from backend.api.dependencies import get_current_user
+from backend.schemas.uml import UMLResponse
+from backend.services import uml_service
 
 router = APIRouter()
 

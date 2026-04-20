@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import List
-from models import Project
-from models import Requirement
-from services import generate_uml_from_requirements
+from backend.models import Project
+from backend.models import Requirement
+from backend.services import generate_uml_from_requirements
 
 
 def get_project_or_404(db: Session, project_id: int, user_id: int) -> Project:
