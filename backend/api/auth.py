@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from database import get_db
+from backend.database import get_db
 # Added UserLogin schema to avoid confusion in Frontend
 from backend.schemas.auth import UserCreate, Token, UserLogin 
 from backend.services import auth_service
