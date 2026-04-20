@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 
-# Absolute imports for reliability within Docker
+# Absolute imports for container consistency
 from backend.database import get_db
 from backend.models.user import User
 from backend.api.dependencies import get_current_user
@@ -17,22 +17,19 @@ def list_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
-    # Fetch all projects for the authenticated user and calculate requirement counts.
-
-    # 1. Retrieve raw project models from the database
+    """
+    Fetch all user projects and inject the requirement counts manually.
+    """
     projects = project_service.list_user_projects(db, current_user.id)
 
-    # 2. Manually construct ProjectResponse to include the calculated requirement_count
-    # and map database fields correctly to the schema.
     results = []
     for p in projects:
         count = project_service.get_active_requirement_count(p)
         
-        # Note: Mapping 'name' from DB to 'app_name' in Schema if they differ
+        # Using .app_name instead of .name based on logs
         res = ProjectResponse(
             id=p.id,
-            app_name=p.name,  # Mapping DB 'name' to Schema 'app_name'
+            app_name=p.app_name, 
             model_provider=p.model_provider,
             model_name=p.model_name,
             created_at=p.created_at,
@@ -50,18 +47,16 @@ def create_project(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Initializes a new project and returns it with auto-generated timestamps.
+    Create a new project and return the auto-generated data.
     """
-    # استدعاء السيرفس
     project = project_service.create_project(db, current_user.id, project_data)
     
-    # بناء الرد الراجع للمتصفح
     return ProjectResponse(
         id=project.id,
-        app_name=project.app_name, 
+        app_name=project.app_name,
         model_provider=project.model_provider,
         model_name=project.model_name,
-        created_at=project.created_at, 
+        created_at=project.created_at,
         updated_at=project.created_at,
         requirement_count=0
     )
@@ -72,18 +67,19 @@ def get_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
-    # Retrieve details for a specific project.
-
+    """
+    Fetch a single project. Fixed the AttributeError by using app_name.
+    """
     project = project_service.get_project_by_id(db, project_id, current_user.id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
     count = project_service.get_active_requirement_count(project)
     
+    # Corrected: Accessing p.app_name as defined in your SQLAlchemy model
     return ProjectResponse(
         id=project.id,
-        app_name=project.name,
+        app_name=project.app_name,
         model_provider=project.model_provider,
         model_name=project.model_name,
         created_at=project.created_at,
@@ -98,19 +94,19 @@ def update_project_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
-    # Update the LLM settings for an existing project.
-
+    """
+    Update project model settings. Ensure correct field mapping.
+    """
     project = project_service.update_model_settings(db, project_id, current_user.id, update)
     count = project_service.get_active_requirement_count(project)
     
     return ProjectResponse(
         id=project.id,
-        app_name=project.name,
+        app_name=project.app_name,
         model_provider=project.model_provider,
         model_name=project.model_name,
         created_at=project.created_at,
-        updated_at=datetime.utcnow(), # Manually updating the timestamp for immediate feedback
+        updated_at=datetime.utcnow(),
         requirement_count=count
     )
 
@@ -120,8 +116,8 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
-    # Delete a project and its associated data.
-
+    """
+    Remove the project from the database.
+    """
     project_service.delete_user_project(db, project_id, current_user.id)
     return None
