@@ -47,7 +47,7 @@ app.include_router(api.chat, tags=["Chat"])
 app.include_router(api.requirements, prefix="/req", tags=["Requirements"])
 
 # Info: Endpoints like /info/models
-app.include_router(api.models_api, prefix="/info", tags=["Models Info"])
+app.include_router(api.models_api, tags=["Models Info"])
 
 # UML: Uncomment when your uml_router is ready
 # app.include_router(api.uml, prefix="/uml", tags=["UML Generation"])
