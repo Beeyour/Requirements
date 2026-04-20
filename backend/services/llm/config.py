@@ -4,6 +4,8 @@
 AVAILABLE_MODELS = {
     "openai": {
         "gpt-5.4-nano": "GPT 5.4",
+        "gpt-4o": "GPT 4o",
+
     },
     "google": {
         "gemini-3.1-flash-lite-preview": "Gemini 3.1 Flash Lite",  
