@@ -6,8 +6,12 @@ from backend.services.llm.config import (
 )
 
 def get_models_metadata():
-    # We need to transform the dictionaries of models into lists of model IDs
-    # to match the Pydantic schema (Dict[str, List[str]])
+    """
+    Transforms the nested dictionary from config into a format 
+    compatible with the Pydantic Response Schema.
+    """
+    # Transform Dict[str, Dict[str, str]] -> Dict[str, List[str]]
+    # We extract only the IDs (keys) for the 'providers' field
     transformed_providers = {
         provider: list(models.keys()) 
         for provider, models in AVAILABLE_MODELS.items()
