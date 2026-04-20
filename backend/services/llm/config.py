@@ -1,5 +1,5 @@
 # Model definitions and UI labels for 2026 standards
-
+from typing import Dict
 # Dictionary mapping provider keys to another dictionary of { model_id: display_name }
 AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "openai": {
