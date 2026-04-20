@@ -1,9 +1,8 @@
 import enum
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
-from datetime import datetime
-from database import Base
-
+from datetime import datetime, timezone
+from backend.database import Base
 
 class ReqType(str, enum.Enum):
     FUNCTIONAL = "Functional"
@@ -14,24 +13,29 @@ class ReqPriority(str, enum.Enum):
     MEDIUM = "Medium"
     LOW = "Low"
 
-# Software requirements management and versioning core.
 class Requirement(Base):
+    # Handles individual software requirements, versioning, and status tracking
     __tablename__ = "requirements"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), index=True, nullable=False) # أضفنا Index
+    # Linked to project with index for optimized lookup
+    project_id = Column(Integer, ForeignKey("projects.id"), index=True, nullable=False)
 
     type = Column(SQLEnum(ReqType), default=ReqType.FUNCTIONAL, nullable=False)
     priority = Column(SQLEnum(ReqPriority), default=ReqPriority.HIGH, nullable=False)
-
     description = Column(Text, nullable=False)
 
+    # Tracks requirement evolution through versions
     version_number = Column(Integer, default=1, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Global standard UTC timestamps for cross-client compatibility
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True), 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
 
     project = relationship("Project", back_populates="requirements")
     logs = relationship("RequirementLog", back_populates="requirement", cascade="all, delete-orphan")
-

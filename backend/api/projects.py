@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models import User
-from .dependencies import get_current_user
-from schemas.project import ProjectCreate, ProjectModelUpdate, ProjectResponse
-from services import project_service
+from backend.database import get_db
+from backend.models.user import User
+from backend.api.dependencies import get_current_user
+from backend.schemas.project import ProjectCreate, ProjectModelUpdate, ProjectResponse
+from backend.services import project_service
 
 router = APIRouter()
 
@@ -14,11 +14,13 @@ def list_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retrieves all projects owned by the authenticated user."""
+    # Fetches all projects associated with the logged-in user
     projects = project_service.list_user_projects(db, current_user.id)
+    
+    # Enrich the response with the calculated count of active requirements
     return [
         ProjectResponse(
-            **p.__dict__, 
+            **ProjectResponse.model_validate(p).model_dump(), 
             requirement_count=project_service.get_active_requirement_count(p)
         ) for p in projects
     ]
@@ -29,10 +31,12 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Creates a new software requirement project."""
+    # Initializes a new project and binds it to the current user
     project = project_service.create_project(db, current_user.id, project_data)
+    
+    # New projects start with zero requirements
     return ProjectResponse(
-        **project.__dict__,
+        **ProjectResponse.model_validate(project).model_dump(),
         requirement_count=0
     )
 
@@ -42,10 +46,10 @@ def get_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retrieves detailed information about a specific project."""
+    # Retrieve a specific project's details with its requirement statistics
     project = project_service.get_project_by_id(db, project_id, current_user.id)
     return ProjectResponse(
-        **project.__dict__,
+        **ProjectResponse.model_validate(project).model_dump(),
         requirement_count=project_service.get_active_requirement_count(project)
     )
 
@@ -56,10 +60,10 @@ def update_project_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Updates the AI model and provider for an existing project."""
+    # Allows switching the underlying LLM engine for the project on-the-fly
     project = project_service.update_model_settings(db, project_id, current_user.id, update)
     return ProjectResponse(
-        **project.__dict__,
+        **ProjectResponse.model_validate(project).model_dump(),
         requirement_count=project_service.get_active_requirement_count(project)
     )
 
@@ -69,5 +73,5 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Deletes a project and its associated data."""
+    # Permanent deletion of the project and its cascading children (requirements/logs)
     project_service.delete_user_project(db, project_id, current_user.id)

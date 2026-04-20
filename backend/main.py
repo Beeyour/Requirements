@@ -1,16 +1,22 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
-from api import auth, projects, chat, requirements, models_api, uml # Import uml here
-import models # Crucial for table creation
+# Use absolute imports for reliability
+from backend.database import engine, Base
+from backend import api
+import backend.models as models  # Ensures all tables are registered before creation
 
-app = FastAPI(title="SRS Analyst API", version="1.3.0")
+app = FastAPI(
+    title="SRS Analyst API", 
+    description="AI-powered software requirements engineering platform",
+    version="1.3.0"
+)
 
-# Setup CORS
+# Setup CORS - In production, replace "*" with your actual frontend domain
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
 
-# Create database tables on startup
+# Create database tables on startup (Automatic migration)
+# Note: In production, using Alembic is recommended over this line.
 Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
@@ -21,15 +27,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Registering Routers
-app.include_router(auth,        prefix="/auth",     tags=["Authentication"])
-app.include_router(projects,    prefix="/projects", tags=["Projects"])
-app.include_router(chat,        prefix="/chat",     tags=["Chat"]) # Added prefix for clarity
-app.include_router(requirements,prefix="/req",      tags=["Requirements"]) # Optional prefix
-app.include_router(uml,         prefix="/uml",      tags=["UML Generation"]) # Register UML
-app.include_router(models_api,  prefix="/info",     tags=["Models Info"])
+# --- Registering Routers ---
+
+# Auth: Endpoints like /auth/login, /auth/register
+app.include_router(api.auth, prefix="/auth", tags=["Authentication"])
+
+# Projects: Endpoints like /projects/, /projects/{id}
+app.include_router(api.projects, prefix="/projects", tags=["Projects"])
+
+# Chat: Fixed prefixing to avoid "/chat/chat" redundancy.
+# The router already defines paths starting with /chat
+app.include_router(api.chat, tags=["Chat"]) 
+
+# Requirements: Endpoints like /req/generate-srs
+app.include_router(api.requirements, prefix="/req", tags=["Requirements"])
+
+# Info: Endpoints like /info/models
+app.include_router(api.models_api, prefix="/info", tags=["Models Info"])
+
+# UML: Uncomment when your uml_router is ready
+# app.include_router(api.uml, prefix="/uml", tags=["UML Generation"])
+
+@app.get("/", tags=["Root"])
+def read_root():
+    return {
+        "message": "Welcome to SRS Analyst API",
+        "docs": "/docs",
+        "status": "active"
+    }
 
 @app.get("/health", tags=["Health"])
 def health_check():
-    """Service health check endpoint."""
+    """Service health check for monitoring and deployment."""
     return {"status": "healthy"}

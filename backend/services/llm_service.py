@@ -1,7 +1,13 @@
-from .llm_client import AVAILABLE_MODELS, DEFAULT_PROVIDER, DEFAULT_MODEL, PROVIDER_LABELS
+from backend.services.llm.config import (
+    AVAILABLE_MODELS,
+    DEFAULT_PROVIDER,
+    DEFAULT_MODEL,
+    PROVIDER_LABELS
+)
 
 def get_models_metadata():
-    """Returns available LLM providers and models configuration."""
+    # Central service to fetch LLM metadata for the frontend
+    # Returning the dictionary directly; Pydantic will validate it against the schema
     return {
         "providers": AVAILABLE_MODELS,
         "provider_labels": PROVIDER_LABELS,

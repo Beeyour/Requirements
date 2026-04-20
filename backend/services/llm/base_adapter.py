@@ -2,19 +2,16 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 class BaseLLMAdapter(ABC):
-    """
-    Abstract base class defining the interface for all LLM adapters.
-    """
+    # Abstract interface for all LLM providers to ensure method consistency
     @abstractmethod
-    def call(
-        self, 
-        model: str, 
-        system_prompt: str, 
-        messages: List[Dict[str, str]], 
-        temperature: float, 
+    async def call(
+        self,
+        model: str,
+        system_prompt: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
         max_tokens: int
     ) -> str:
-        """
-        Executes a call to the LLM provider.
-        """
+        # This method must be implemented as ASYNC by any specific LLM adapter
+        # to remain compatible with the Agent and Service layers.
         pass

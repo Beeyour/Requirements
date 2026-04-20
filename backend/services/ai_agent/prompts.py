@@ -1,4 +1,4 @@
-
+# System prompt for the requirements gathering interview process
 _INTERVIEW_SYSTEM = """You are an expert Software Requirements Analyst conducting a structured \
 interview to gather requirements for a software project.
 
@@ -14,6 +14,7 @@ UI/UX expectations, technical constraints.
 When you have gathered sufficient information (typically 8-12 substantive exchanges), append the \
 exact token SATURATION_DETECTED on its own line at the very end — do not explain it."""
 
+# JSON prompt for evaluating conversation coverage and completion
 _SATURATION_SYSTEM = """Analyse the conversation below and decide whether sufficient information \
 exists to write a comprehensive Software Requirements Specification.
 
@@ -24,6 +25,7 @@ Return ONLY valid JSON — no markdown fences, no extra text:
   "missing_areas": ["<area>", ...]
 }"""
 
+# JSON prompt for converting chat history into structured SRS items
 _SRS_SYSTEM = """You are a Software Requirements Analyst. Extract and formalise all requirements \
 from the interview transcript below.
 
@@ -39,6 +41,7 @@ Guidelines:
 - Produce at least 6 functional and 4 non-functional requirements.
 - No duplicates."""
 
+# JSON prompt for detecting logical contradictions between requirements
 _CONFLICT_SYSTEM = """You are a requirements consistency reviewer.
 
 Determine whether the edited requirement below contradicts, duplicates, or creates an \
