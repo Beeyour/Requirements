@@ -49,19 +49,19 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
-    # Initialize a new project and return it with a zero requirement count.
-
-    # 1. Logic to save the project in the database
+    """
+    Initializes a new project and returns it with auto-generated timestamps.
+    """
+    # استدعاء السيرفس
     project = project_service.create_project(db, current_user.id, project_data)
     
-    # 2. Construct the response. New projects always start with 0 requirements.
+    # بناء الرد الراجع للمتصفح
     return ProjectResponse(
         id=project.id,
-        app_name=project.name,
+        app_name=project.app_name, 
         model_provider=project.model_provider,
         model_name=project.model_name,
-        created_at=project.created_at,
+        created_at=project.created_at, 
         updated_at=project.created_at,
         requirement_count=0
     )

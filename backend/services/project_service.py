@@ -26,29 +26,24 @@ def list_user_projects(db: Session, user_id: int) -> List[Project]:
 
 def create_project(db: Session, user_id: int, data: ProjectCreate) -> Project:
     """
-    Validates model settings and creates a new project record in the database.
-    Note: Timestamps (created_at) are handled automatically by the DB defaults.
+    Validates and creates a new project using the correct field names.
     """
-    # 1. Validate the AI model and provider settings
     try:
         validate_model(data.model_provider, data.model_name)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    # 2. Map Schema fields (app_name) to Model fields (name)
+    # تم تصحيح الحقل هنا من name إلى app_name بناءً على خطأ التيرمينال
     db_project = Project(
         user_id=user_id,
-        name=data.app_name,  # 'app_name' from user input maps to 'name' in DB
+        app_name=data.app_name, # تأكد أن هذا هو الاسم الموجود في models/project.py
         model_provider=data.model_provider,
         model_name=data.model_name,
     )
 
-    # 3. Save to database
     db.add(db_project)
     db.commit()
-    
-    # 4. Refresh to load the auto-generated fields like 'id' and 'created_at'
-    db.refresh(db_project)
+    db.refresh(db_project) # يجلب الوقت (created_at) تلقائياً من القاعدة
     return db_project
 
 def get_project_by_id(db: Session, project_id: int, user_id: int) -> Project:
