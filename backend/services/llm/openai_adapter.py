@@ -1,33 +1,51 @@
 import os
 from typing import List, Dict
 from openai import AsyncOpenAI
+# Using absolute import for container-to-container reliability
 from backend.services.llm.base_adapter import BaseLLMAdapter
 
 class OpenAIAdapter(BaseLLMAdapter):
     def __init__(self):
-        # Initialize the OpenAI client by fetching the API key from environment variables
+        """
+        Initialize the OpenAI client. 
+        Fetches the key from the environment which must be set in the .env file.
+        """
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            # Raise an error if the key is missing to avoid failed API calls at runtime
+            # Crucial: This ensures the server crashes early if the key is missing
             raise RuntimeError("OPENAI_API_KEY environment variable is not set")
-        
-        # Change: Using AsyncOpenAI to maintain compatibility with the upper layers
+
+        # AsyncOpenAI is used to prevent blocking the main FastAPI event loop
         self.client = AsyncOpenAI(api_key=self.api_key)
 
-    async def call(self, model: str, system_prompt: str, messages: List[Dict[str, str]], 
-            temperature: float, max_tokens: int) -> str:
-        
-        # Merge the system prompt with the conversation history
+    async def call(
+        self,
+        model: str,
+        system_prompt: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int
+    ) -> str:
+        """
+        Executes an asynchronous call to OpenAI Chat Completion API.
+        """
+        # Combine the system instructions with the user message history
         full_messages = [{"role": "system", "content": system_prompt}] + list(messages)
 
-        # Change: Use 'await' for the async chat completion request
-        response = await self.client.chat.completions.create(
-            model=model,
-            messages=full_messages,
-            temperature=temperature,
-            # Utilizing max_completion_tokens as per the 2026 SDK standards
-            max_completion_tokens=max_tokens,
-        )
-        
-        # Safely return the content or an empty string if it's missing
-        return response.choices[0].message.content or ""
+        try:
+            # FIX: Reverted 'max_completion_tokens' to 'max_tokens'
+            # to maintain compatibility with standard GPT models (GPT-4o, GPT-3.5).
+            response = await self.client.chat.completions.create(
+                model=model,
+                messages=full_messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+            # Extract and return the string content from the response object
+            return response.choices[0].message.content or ""
+
+        except Exception as e:
+            # Log the error and raise for the service layer to handle
+            print(f"OpenAI API Error: {str(e)}")
+            raise RuntimeError(f"Failed to call OpenAI: {str(e)}")
