@@ -5,8 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.database import engine, Base
 from backend import api
 from backend import models
-import backend.models as models  # Ensures all tables are registered before creation
-
+from backend.models.user import User
+from backend.models.project import Project
+from backend.models.conversation import ConversationHistory
+from backend.models.requirement import Requirement
+from backend.models.requirement_log import RequirementLog
 app = FastAPI(
     title="SRS Analyst API", 
     description="AI-powered software requirements engineering platform",

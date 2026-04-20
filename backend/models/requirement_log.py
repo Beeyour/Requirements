@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from database import Base
+from backend.database import Base
 
 # Audit logs for requirement history and change tracking.
 class RequirementLog(Base):
