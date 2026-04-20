@@ -1,7 +1,7 @@
 import json
 import re
 from typing import Any
-from llm.config import AVAILABLE_MODELS
+from backend.services.llm.config import AVAILABLE_MODELS
 
 def parse_json_response(text: str) -> Any:
     """Strip optional markdown fences then parse JSON."""
