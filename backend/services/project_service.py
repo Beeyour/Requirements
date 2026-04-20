@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from typing import List
 from backend.models.project import Project
 from backend.schemas.project import ProjectCreate, ProjectModelUpdate
-from backend.services.llm_client import validate_model
+from backend.services.llm.utils import validate_model
 
 def get_active_requirement_count(project: Project) -> int:
     # Calculates the total number of requirements marked as active for the project
