@@ -8,20 +8,18 @@ from backend.schemas.project import ProjectCreate, ProjectModelUpdate, ProjectRe
 from backend.services import project_service
 
 router = APIRouter()
-
 @router.get("/", response_model=List[ProjectResponse])
 def list_projects(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_db),
 ):
-    # Fetches all projects associated with the logged-in user
     projects = project_service.list_user_projects(db, current_user.id)
-    
-    # Enrich the response with the calculated count of active requirements
+
+
     return [
-        ProjectResponse(
-            **ProjectResponse.model_validate(p).model_dump(), 
-            requirement_count=project_service.get_active_requirement_count(p)
+        ProjectResponse.model_validate(
+            p, 
+            update={"requirement_count": project_service.get_active_requirement_count(p)}
         ) for p in projects
     ]
 
@@ -31,14 +29,10 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Initializes a new project and binds it to the current user
     project = project_service.create_project(db, current_user.id, project_data)
     
-    # New projects start with zero requirements
-    return ProjectResponse(
-        **ProjectResponse.model_validate(project).model_dump(),
-        requirement_count=0
-    )
+
+    return ProjectResponse.model_validate(project, update={"requirement_count": 0})
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(
@@ -46,12 +40,10 @@ def get_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Retrieve a specific project's details with its requirement statistics
     project = project_service.get_project_by_id(db, project_id, current_user.id)
-    return ProjectResponse(
-        **ProjectResponse.model_validate(project).model_dump(),
-        requirement_count=project_service.get_active_requirement_count(project)
-    )
+    count = project_service.get_active_requirement_count(project)
+    
+    return ProjectResponse.model_validate(project, update={"requirement_count": count})
 
 @router.patch("/{project_id}/model", response_model=ProjectResponse)
 def update_project_model(
@@ -60,18 +52,7 @@ def update_project_model(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Allows switching the underlying LLM engine for the project on-the-fly
     project = project_service.update_model_settings(db, project_id, current_user.id, update)
-    return ProjectResponse(
-        **ProjectResponse.model_validate(project).model_dump(),
-        requirement_count=project_service.get_active_requirement_count(project)
-    )
-
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_project(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    # Permanent deletion of the project and its cascading children (requirements/logs)
-    project_service.delete_user_project(db, project_id, current_user.id)
+    count = project_service.get_active_requirement_count(project)
+    
+    return ProjectResponse.model_validate(project, update={"requirement_count": count})

@@ -33,10 +33,9 @@ class ProjectResponse(BaseModel):
     requirement_count: int
 
     # Allows Pydantic to validate SQLAlchemy objects
-    model_config = ConfigDict(from_attributes=True)
-
-
-model_config = ConfigDict(
+    model_config = ConfigDict(
     from_attributes=True,
     protected_namespaces=()  # هذا السطر ينهي التحذير
-)
+    )
+
+
