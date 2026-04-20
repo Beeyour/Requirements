@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Use absolute imports for reliability
 from backend.database import engine, Base
 from backend import api
+from backend import models
 import backend.models as models  # Ensures all tables are registered before creation
 
 app = FastAPI(
