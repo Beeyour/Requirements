@@ -34,3 +34,9 @@ class ProjectResponse(BaseModel):
 
     # Allows Pydantic to validate SQLAlchemy objects
     model_config = ConfigDict(from_attributes=True)
+
+
+model_config = ConfigDict(
+    from_attributes=True,
+    protected_namespaces=()  # هذا السطر ينهي التحذير
+)
