@@ -8,10 +8,12 @@ from backend.schemas.project import ProjectCreate, ProjectModelUpdate, ProjectRe
 from backend.services import project_service
 
 router = APIRouter()
+
+
 @router.get("/", response_model=List[ProjectResponse])
 def list_projects(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_db),
+    current_user: User = Depends(get_current_user), 
 ):
     projects = project_service.list_user_projects(db, current_user.id)
 
