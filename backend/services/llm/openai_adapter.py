@@ -42,6 +42,8 @@ class OpenAIAdapter(BaseLLMAdapter):
                 max_tokens=max_tokens,
             )
 
+
+
             # Extract and return the string content from the response object
             return response.choices[0].message.content or ""
 
