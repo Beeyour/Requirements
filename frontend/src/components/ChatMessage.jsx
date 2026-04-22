@@ -1,10 +1,20 @@
 export default function ChatMessage({ message }) {
+  const { t, i18n } = useTranslation()
   const isUser = message.role === 'user'
 
-  const time = new Date(message.timestamp).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  // THE FIX: Ensure the string is treated as UTC
+  const formatTime = (rawTimestamp) => {
+    if (!rawTimestamp) return ''
+    
+    // If the string doesn't end with 'Z', add it to force UTC interpretation
+    const utcString = rawTimestamp.endsWith('Z') ? rawTimestamp : `${rawTimestamp}Z`
+    
+    return new Date(utcString).toLocaleTimeString(i18n.language, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
