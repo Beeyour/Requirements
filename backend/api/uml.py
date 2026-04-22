@@ -19,7 +19,7 @@ async def get_uml(project_id: int, db: Session = Depends(get_db)):
 
     requirements = requirement_service.get_project_requirements(db, project_id, False)
 
-    ai_json = await usecase_service.format_requirements_for_ai(requirements)
+    ai_json = usecase_service.format_requirements_for_ai(requirements)
 
     usecase_json = await usecase_service.generate_usecase_json(ai_json)
 
