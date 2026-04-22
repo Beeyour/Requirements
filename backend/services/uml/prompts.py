@@ -10,6 +10,8 @@ CRITICAL RULES:
    - GOOD: "Anonymize Data"
 4. MINIMAL RELATIONS: DO NOT use `includes` or `extends` unless the text explicitly dictates a mandatory dependency or an optional alternative path.
 5. Output ONLY valid JSON. All indices MUST be 0-based integers.
+6. LANGUAGE: Output MUST be in English regardless of input language.
+6. CRUD RULE: Group Create/Read/Update/Delete into "Manage [Entity]".
 
 EXPECTED JSON SCHEMA:
 {
@@ -43,7 +45,7 @@ _CLASS_DIAGRAM_SYSTEM = """You are an Expert Software Architect. Your task is to
 2. ATTRIBUTES: Extract properties with visibility (+ for public, - for private) and types (e.g., -name: String).
 3. METHODS: Extract behaviors (e.g., +calculateTotal(): float).
 4. RELATIONSHIPS: 
-   - Identify how classes connect. 
+   - Identify how classes connect.
    - Use ONLY these types: "inheritance", "composition", "aggregation", "association".
    - CRITICAL: You must use 'from_idx' and 'to_idx' which refer to the zero-based index of the class in your 'classes' list.
    - LABEL: Combine multiplicity and description into one string (e.g., "1 to * owns").

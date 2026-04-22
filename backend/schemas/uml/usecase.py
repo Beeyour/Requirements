@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from pydantic import BaseModel, ConfigDict, Field
+from typing import List, Optional, Tuple
 from datetime import datetime
 
 
@@ -35,3 +35,13 @@ class UseCaseLogResponse(BaseModel):
     timestamp: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+
+class UseCaseJSON(BaseModel):
+    system_title: str
+    actors: List[str]
+    use_cases: List[str]
+    links: List[Tuple[int, int]]
+    includes: List[Tuple[int, int]] = Field(default_factory=list)
+    extends: List[Tuple[int, int]] = Field(default_factory=list)

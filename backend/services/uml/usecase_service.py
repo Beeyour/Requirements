@@ -29,6 +29,7 @@ async def generate_usecase_json(formatted_requirements: str, provider: str, mode
         messages=[{"role": "user", "content": user_content}],
         temperature=0.1,
         max_tokens=1000,
+        is_json=True
     )
     print(plantuml_json)
     return plantuml_json.strip()
@@ -59,6 +60,8 @@ def generate_plantuml(data):
         lines.append(f"A{a_idx} --> UC{uc_idx}")
     lines.append("\n@enduml")
     return "\n".join(lines)
+
+
 
 
 

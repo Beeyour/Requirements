@@ -27,8 +27,8 @@ def test_format_requirements_logic():
 
 @pytest.mark.asyncio
 async def test_generate_usecase_prompt_structure():
-    sample_req = "Dr. Ramani determines Mr. Smith is a danger to himself. She prescribes a specific medication (Nurse cannot do this) and formally detains him under the Mental Health Act (Sectioning)."
-    prompt1 = await generate_usecase_json(sample_req, DEFAULT_PROVIDER, "gpt-5.4-2026-03-05") # "gpt-5.4-2026-03-05"    DEFAULT_MODEL
+    sample_req = "A new patient, Mr. Smith, arrives at the clinic. The Medical Receptionist searches the database to ensure he isn't already registered. Finding no record, she registers his personal details (Name, DoB, Address) and books an initial consultation slot"
+    prompt1 = await generate_usecase_json(sample_req, DEFAULT_PROVIDER, DEFAULT_MODEL) # "gpt-5.4-2026-03-05"    DEFAULT_MODEL
 
     prompt = generate_plantuml(json.loads(prompt1))
     print(prompt)

@@ -41,7 +41,6 @@ def generate_class_plantuml(data):
 
         for method in cls.get("methods", []):
             lines.append(f'    {method}')
-        
         lines.append("}")
         lines.append("")
 
@@ -51,7 +50,7 @@ def generate_class_plantuml(data):
         t_idx = rel.get("to_idx")
         r_type = rel.get("type", "association")
         label = rel.get("label", "")
-        
+
 
         mapping = {
             "inheritance": "<|--",
@@ -60,12 +59,9 @@ def generate_class_plantuml(data):
             "association": "--"
         }
         symbol = mapping.get(r_type, "--")
-        
 
         desc = f" : {label}" if label else ""
-        
 
         lines.append(f"C{f_idx} {symbol} C{t_idx}{desc}")
-
     lines.append("\n@enduml")
     return "\n".join(lines)
