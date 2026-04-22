@@ -21,10 +21,12 @@ export default function App() {
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    // This flips the entire HTML document direction based on the language
-    document.documentElement.dir = i18n.dir();
-    document.documentElement.lang = i18n.language;
-  }, [i18n.language]);
+    // Add a safety check: only run if i18n is fully loaded and has the dir() function
+    if (i18n && typeof i18n.dir === 'function') {
+      document.documentElement.dir = i18n.dir();
+      document.documentElement.lang = i18n.language;
+    }
+  }, [i18n, i18n?.language]);
 
   return (
     <AuthProvider>
