@@ -21,7 +21,7 @@ export default function ModelSelector({ value, onChange, models }) {
   return (
     <div className="flex items-center gap-3 py-2">
       <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
-        {t('model')}:
+        {t('model_label')}:
       </span>
 
       <div className="relative group">
