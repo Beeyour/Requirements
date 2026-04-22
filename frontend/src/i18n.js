@@ -75,6 +75,7 @@ const resources = {
       "change_ai_model": "Change AI Model",
       "change_model_desc": "The selected model will be used for all future AI responses in this project.",
       "save": "Save",
+      "err_failed_send": "Failed to send message. Please check your connection and try again.",
 
       // SRS Page
       "srs_title": "Software Requirements Specification",
@@ -173,6 +174,7 @@ const resources = {
       "change_ai_model": "تغيير نموذج الذكاء الاصطناعي",
       "change_model_desc": "سيتم استخدام النموذج المحدد لجميع ردود الذكاء الاصطناعي المستقبلية في هذا المشروع.",
       "save": "حفظ",
+      "err_failed_send": "فشل في إرسال الرسالة. يرجى التحقق من الاتصال والمحاولة مرة أخرى.",
 
       // SRS Page
       "srs_title": "مواصفات متطلبات البرنامج",

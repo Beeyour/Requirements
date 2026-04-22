@@ -30,6 +30,7 @@ export default function InterviewPage() {
   const [showModelModal, setShowModelModal] = useState(false)
   const [pendingModel, setPendingModel] = useState('')
   const [savingModel, setSavingModel] = useState(false)
+  const [sendError, setSendError] = useState(null)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -66,13 +67,21 @@ export default function InterviewPage() {
   })
 
   const handleSend = async (e) => {
-    e.preventDefault()
-    if (!input.trim() || loading) return
-    const text = input
-    setInput('')
-    await sendMessage(text)
-    inputRef.current?.focus()
-  }
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const text = input;
+    setInput('');
+    setSendError(null);
+
+    try {
+      await sendMessage(text);
+      inputRef.current?.focus();
+    } catch (err) {
+      console.error("Send error:", err);
+      setSendError(t('err_failed_send'));
+    }
+  };
 
   const handleGenerateSRS = async () => {
     setGenerating(true)
@@ -171,22 +180,33 @@ export default function InterviewPage() {
       {/* --- END STICKY HEADER --- */}
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full scrollbar-hide">
+        {/* General Error (like Load History failure) */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">{error}</div>
         )}
+
+        {/* CHAT MESSAGES */}
         {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
+
+        {/* LOADING INDICATOR */}
         {loading && (
           <div className="flex justify-start mb-4">
-            <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold me-2 mt-1">AI</div>
-            <div className="bg-white border border-slate-200 rounded-2xl rounded-es-sm px-4 py-3 shadow-sm">
-              <div className="flex space-x-1.5">
-                {[0, 150, 300].map((delay) => (
-                  <div key={delay} className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
-                ))}
-              </div>
+             {/* AI Avatar and Bounce dots code... */}
+          </div>
+        )}
+
+        {/* SPECIFIC SEND ERROR - Appears at the bottom of the chat list */}
+        {sendError && (
+          <div className="mb-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center gap-2 text-start">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {sendError}
             </div>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 

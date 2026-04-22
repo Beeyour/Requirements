@@ -31,49 +31,43 @@ export function useChat(projectId) {
   }, [projectId])
 
   const sendMessage = useCallback(
-  async (content) => {
-    if (!content.trim() || !projectId) return
+    async (content) => {
+      if (!content.trim() || !projectId) return
 
-    // 1. CREATE AN OPTIMISTIC MESSAGE
-    // This creates a fake message object that matches your ChatMessage structure
-    const optimisticUserMessage = {
-      id: Date.now(), // Temporary unique ID
-      role: 'user',
-      content: content.trim(),
-      timestamp: new Date().toISOString(),
-    }
-
-    // 2. UPDATE STATE IMMEDIATELY
-    // This makes the bubble appear the millisecond the user clicks send
-    setMessages((prev) => [...prev, optimisticUserMessage])
-    
-    setLoading(true) // This triggers the AI "bouncing dots"
-    setError(null)
-
-    try {
-      const { data } = await apiClient.post('/chat', {
-        project_id: projectId,
+      // 1. CREATE AN OPTIMISTIC MESSAGE
+      const optimisticUserMessage = {
+        id: Date.now(),
+        role: 'user',
         content: content.trim(),
-      })
+        timestamp: new Date().toISOString(),
+      }
 
-      // 3. OVERWRITE WITH REAL DATA
-      // Once the backend responds, we replace our "fake" history with the official one
-      setMessages(data.history)
+      // 2. UPDATE STATE IMMEDIATELY
+      setMessages((prev) => [...prev, optimisticUserMessage])
       
-      // I noticed your code had "if (true)" - you should likely use 
-      // the flag returned by your FastAPI backend here:
-      if (data.is_saturated) setIsSaturated(true) 
-      
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to send message')
-      // OPTIONAL: If the call fails, remove the optimistic message so the UI stays accurate
-      setMessages((prev) => prev.filter(msg => msg.id !== optimisticUserMessage.id))
-    } finally {
-      setLoading(false)
-    }
-  },
-  [projectId],
-)
+      setLoading(true) 
+      setError(null)
+
+      try {
+        const { data } = await apiClient.post('/chat', {
+          project_id: projectId,
+          content: content.trim(),
+        })
+
+        // 3. OVERWRITE WITH REAL DATA
+        setMessages(data.history)
+        if (data.is_saturated) setIsSaturated(true) 
+        
+      } catch (err) {
+        console.error("Chat API Error:", err)
+        throw err; 
+
+      } finally {
+        setLoading(false)
+      }
+    },
+    [projectId],
+  )
 
   const resetConversation = useCallback(async () => {
     await apiClient.post('/chat/reset', { project_id: projectId })
