@@ -7,20 +7,56 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     translation: {
+      // Navbar (from before)
       "dashboard": "Dashboard",
       "srs_analyst": "SRS Analyst",
       "sign_out": "Sign out",
-      "type_message": "Type your answer… (Enter to send)",
-      "change_language": "عربي"
+      "change_language": "عربي",
+      
+      // Dashboard Page
+      "projects": "Projects",
+      "project_singular": "project",
+      "projects_plural": "projects",
+      "new_project": "New Project",
+      "app_name_label": "Application name",
+      "app_name_placeholder": "e.g. E-commerce Platform",
+      "ai_model_label": "AI Model",
+      "creating": "Creating…",
+      "create_start": "Create & Start Interview",
+      "cancel": "Cancel",
+      "loading_projects": "Loading projects…",
+      "no_projects": "No projects yet",
+      "no_projects_desc": "Create your first project to start an AI requirements interview.",
+      "delete_title": "Delete project?",
+      "delete_desc": "This will permanently delete the project, all conversations, and all requirements.",
+      "delete": "Delete"
     }
   },
   ar: {
     translation: {
+      // Navbar (from before)
       "dashboard": "لوحة القيادة",
       "srs_analyst": "محلل SRS",
       "sign_out": "تسجيل خروج",
-      "type_message": "اكتب إجابتك... (اضغط Enter للإرسال)",
-      "change_language": "English"
+      "change_language": "English",
+      
+      // Dashboard Page
+      "projects": "المشاريع",
+      "project_singular": "مشروع",
+      "projects_plural": "مشاريع",
+      "new_project": "مشروع جديد",
+      "app_name_label": "اسم التطبيق",
+      "app_name_placeholder": "مثال: منصة تجارة إلكترونية",
+      "ai_model_label": "نموذج الذكاء الاصطناعي",
+      "creating": "جاري الإنشاء...",
+      "create_start": "إنشاء وبدء المقابلة",
+      "cancel": "إلغاء",
+      "loading_projects": "جاري تحميل المشاريع...",
+      "no_projects": "لا توجد مشاريع بعد",
+      "no_projects_desc": "قم بإنشاء مشروعك الأول لبدء مقابلة المتطلبات مع الذكاء الاصطناعي.",
+      "delete_title": "حذف المشروع؟",
+      "delete_desc": "سيؤدي هذا إلى حذف المشروع وجميع المحادثات والمتطلبات بشكل دائم.",
+      "delete": "حذف"
     }
   }
 };
