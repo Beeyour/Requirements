@@ -4,7 +4,7 @@ from datetime import datetime
 from backend.database import get_db
 from backend.models import User
 from backend.api.dependencies import get_current_user
-from backend.schemas.uml.usecase import UseCaseResponse
+# from backend.schemas.uml.usecase import UseCaseResponse
 from backend.services import requirement_service
 from backend.services.uml import usecase_service
 from backend.services.uml import utils
@@ -14,7 +14,7 @@ from backend.services.uml import utils
 
 router = APIRouter()
 
-@router.get("/generate-uml/{project_id}", response_model=UseCaseResponse)
+@router.get("/generate-uml/{project_id}")
 async def get_uml(project_id: int, db: Session = Depends(get_db)):
 
     requirements = requirement_service.get_project_requirements(db, project_id, False)
