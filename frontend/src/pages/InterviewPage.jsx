@@ -140,7 +140,7 @@ export default function InterviewPage() {
         <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
 
         {/* Model badge bar */}
-        { project && (
+        {project && (
           <div className="border-b border-slate-100 px-6 bg-white/50">
             <ModelSelector
               value={currentModelKey}
@@ -188,8 +188,22 @@ export default function InterviewPage() {
 
         {/* LOADING INDICATOR */}
         {loading && (
-          <div className="flex justify-start mb-4">
-            {/* AI Avatar and Bounce dots code... */}
+          <div className="flex justify-start mb-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex gap-3 max-w-[80%]">
+              {/* AI Avatar */}
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                <span className="text-xs font-bold">AI</span>
+              </div>
+
+              {/* Thinking Bubble */}
+              <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-3.5 shadow-sm flex items-center h-[42px]">
+                <div className="flex gap-1.5 items-center">
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
