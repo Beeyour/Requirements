@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next' // 1. Import the hook
+
 const PROVIDER_LABELS = {
   openai:    'OpenAI',
   anthropic: 'Anthropic',
@@ -11,10 +13,13 @@ const PROVIDER_COLORS = {
 }
 
 export default function ModelSelector({ value, onChange, models, compact = false }) {
+  const { t } = useTranslation() // 2. Initialize the hook
+
   // value = "provider:model_name"
   const [provider, modelName] = (value || '').split(':')
 
-  const displayName = models?.[provider]?.[modelName] || modelName || 'Select model'
+  // 3. Replace hardcoded text with translation
+  const displayName = models?.[provider]?.[modelName] || modelName || t('select_model')
   const providerLabel = PROVIDER_LABELS[provider] || provider
   const colorClass = PROVIDER_COLORS[provider] || 'text-slate-700 bg-slate-50 border-slate-200'
 
@@ -24,7 +29,8 @@ export default function ModelSelector({ value, onChange, models, compact = false
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`appearance-none text-xs font-medium px-2.5 py-1 pr-6 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 ${colorClass}`}
+          // 4. TAILWIND FIX: Changed pr-6 to pe-6 (padding-end) and added text-start
+          className={`appearance-none text-start text-xs font-medium px-2.5 py-1 pe-6 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 ${colorClass}`}
         >
           {models &&
             Object.entries(models).map(([prov, modelMap]) => (
@@ -38,7 +44,8 @@ export default function ModelSelector({ value, onChange, models, compact = false
             ))}
         </select>
         <svg
-          className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 opacity-60"
+          // 5. TAILWIND FIX: Changed right-1.5 to end-1.5
+          className="pointer-events-none absolute end-1.5 top-1/2 -translate-y-1/2 w-3 h-3 opacity-60"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -56,7 +63,8 @@ export default function ModelSelector({ value, onChange, models, compact = false
           <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full appearance-none border border-slate-300 rounded-lg px-3 py-2.5 pr-9 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent cursor-pointer"
+            // 6. TAILWIND FIX: Changed pr-9 to pe-9 and added text-start
+            className="w-full appearance-none border border-slate-300 rounded-lg px-3 py-2.5 pe-9 text-start text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent cursor-pointer"
           >
             {Object.entries(models).map(([prov, modelMap]) => (
               <optgroup key={prov} label={PROVIDER_LABELS[prov] || prov}>
@@ -69,7 +77,8 @@ export default function ModelSelector({ value, onChange, models, compact = false
             ))}
           </select>
           <svg
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+            // 7. TAILWIND FIX: Changed right-3 to end-3
+            className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -79,7 +88,8 @@ export default function ModelSelector({ value, onChange, models, compact = false
         </div>
       )}
       {value && (
-        <p className="mt-1.5 text-xs text-slate-400">
+        // Added text-start here just to ensure the caption respects RTL naturally
+        <p className="mt-1.5 text-xs text-slate-400 text-start">
           {providerLabel} &mdash; {displayName}
         </p>
       )}

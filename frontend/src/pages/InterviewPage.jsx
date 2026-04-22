@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next' // 1. Import the hook
+
 import Navbar from '../components/Navbar'
 import ChatMessage from '../components/ChatMessage'
 import ModelSelector from '../components/ModelSelector'
 import { useChat } from '../hooks/useChat'
 import { useModels } from '../hooks/useModels'
 import apiClient from '../api/client'
-import { useVoiceToText } from '../hooks/useVoiceToText';
+import { useVoiceToText } from '../hooks/useVoiceToText'
 
 const PROVIDER_LABELS = { openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google' }
 const PROVIDER_COLORS = {
@@ -19,6 +21,8 @@ export default function InterviewPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const projectId = parseInt(id)
+  
+  const { t } = useTranslation() // 2. Initialize the hook
 
   const [project, setProject] = useState(null)
   const [input, setInput] = useState('')
@@ -55,12 +59,12 @@ export default function InterviewPage() {
   }, [messages, loading])
 
   const { isListening, toggleListening } = useVoiceToText((transcript) => {
-    // Use the functional update to ensure we don't lose typed text
     setInput((prev) => {
-      const newText = prev.trim() ? `${prev} ${transcript}` : transcript;
-      return newText;
-    });
-  });
+      const newText = prev.trim() ? `${prev} ${transcript}` : transcript
+      return newText
+    })
+  })
+
   const handleSend = async (e) => {
     e.preventDefault()
     if (!input.trim() || loading) return
@@ -76,14 +80,16 @@ export default function InterviewPage() {
       await apiClient.post('/generate-srs', { project_id: projectId })
       navigate(`/project/${projectId}/srs`)
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to generate SRS')
+      // 3. Translate API error fallback
+      alert(err.response?.data?.detail || t('err_generate_srs'))
     } finally {
       setGenerating(false)
     }
   }
 
   const handleReset = async () => {
-    if (!window.confirm('Archive this conversation? Previous requirements will remain accessible.')) return
+    // 4. Translate browser confirm dialog
+    if (!window.confirm(t('archive_confirm'))) return
     await resetConversation()
     await startInterview()
   }
@@ -99,7 +105,8 @@ export default function InterviewPage() {
       setProject(data)
       setShowModelModal(false)
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update model')
+      // 5. Translate API error fallback
+      alert(err.response?.data?.detail || t('err_update_model'))
     } finally {
       setSavingModel(false)
     }
@@ -112,17 +119,17 @@ export default function InterviewPage() {
   const providerColorClass = project ? (PROVIDER_COLORS[project.model_provider] || 'bg-slate-50 text-slate-700 border-slate-200') : ''
 
   return (
-    <div className="h-screen bg-slate-50 flex flex-col"> {/* Changed min-h-screen to h-screen */}
+    <div className="h-screen bg-slate-50 flex flex-col">
 
       {/* --- STICKY HEADER WRAPPER --- */}
       <div className="sticky top-0 z-50 bg-white">
-        <Navbar projectName={project?.app_name} backTo="/" backLabel="Dashboard" />
+        <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
 
         {/* Model badge bar */}
         {project && (
           <div className="border-b border-slate-100 px-6 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span>Model:</span>
+              <span>{t('model_label')}</span>
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-medium ${providerColorClass}`}>
                 {PROVIDER_LABELS[project.model_provider] || project.model_provider} — {currentModelName}
               </span>
@@ -131,7 +138,7 @@ export default function InterviewPage() {
               onClick={() => { setPendingModel(currentModelKey); setShowModelModal(true) }}
               className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
             >
-              Change
+              {t('change_btn')}
             </button>
           </div>
         )}
@@ -143,7 +150,7 @@ export default function InterviewPage() {
               <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <strong>Information gathering complete.</strong> Ready to generate your SRS document.
+              <strong>{t('info_complete')}</strong> {t('ready_generate')}
             </div>
             <button
               onClick={handleGenerateSRS}
@@ -156,9 +163,8 @@ export default function InterviewPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
               )}
-              {generating ? 'Generating…' : 'Generate SRS'}
+              {generating ? t('generating') : t('generate_srs')}
             </button>
-
           </div>
         )}
       </div>
@@ -166,13 +172,13 @@ export default function InterviewPage() {
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full scrollbar-hide">
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">{error}</div>
         )}
         {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
         {loading && (
           <div className="flex justify-start mb-4">
-            <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold mr-2 mt-1">AI</div>
-            <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold me-2 mt-1">AI</div>
+            <div className="bg-white border border-slate-200 rounded-2xl rounded-es-sm px-4 py-3 shadow-sm">
               <div className="flex space-x-1.5">
                 {[0, 150, 300].map((delay) => (
                   <div key={delay} className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
@@ -193,13 +199,14 @@ export default function InterviewPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e) } }}
               rows={1}
-              placeholder="Type your answer… (Enter to send)"
-              className="flex-1 border border-slate-300 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent max-h-32 overflow-y-auto"
+              placeholder={t('type_answer')}
+              // 6. Add text-start to textarea
+              className="flex-1 border border-slate-300 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent max-h-32 overflow-y-auto text-start"
               style={{ minHeight: '44px' }}
             />
             {/* MICROPHONE BUTTON */}
             <button
-              type="button" // Remember: this is vital so it doesn't submit the form!
+              type="button" 
               onClick={toggleListening}
               className={`p-3 rounded-xl transition-all ${isListening
                   ? 'bg-red-500 text-white scale-110 shadow-lg'
@@ -223,15 +230,18 @@ export default function InterviewPage() {
               disabled={loading || !input.trim()}
               className="p-3 bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* Changed arrow direction implicitly by flipping if needed, but this standard Send arrow is usually fine as is. If you want it to flip in RTL, add `rtl:-scale-x-100` */}
+              <svg className="w-4 h-4 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </button>
           </form>
           <div className="flex items-center justify-between mt-2">
-            <p className="text-xs text-slate-400">{messages.length} messages</p>
+            <p className="text-xs text-slate-400">
+              {messages.length} {messages.length === 1 ? t('message_singular') : t('messages_plural')}
+            </p>
             <button onClick={handleReset} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
-              Reset conversation
+              {t('reset_conv')}
             </button>
           </div>
         </div>
@@ -239,10 +249,11 @@ export default function InterviewPage() {
 
       {/* Change Model Modal */}
       {showModelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        // 7. Add text-start to modal wrapper
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-start">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-800">Change AI Model</h3>
+              <h3 className="font-semibold text-slate-800">{t('change_ai_model')}</h3>
               <button onClick={() => setShowModelModal(false)} className="text-slate-400 hover:text-slate-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -250,12 +261,12 @@ export default function InterviewPage() {
               </button>
             </div>
             <p className="text-sm text-slate-500 mb-4">
-              The selected model will be used for all future AI responses in this project.
+              {t('change_model_desc')}
             </p>
             <ModelSelector value={pendingModel} onChange={setPendingModel} models={models} />
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowModelModal(false)} className="flex-1 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSaveModel}
@@ -263,7 +274,7 @@ export default function InterviewPage() {
                 className="flex-1 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
                 {savingModel && <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-                Save
+                {t('save')}
               </button>
             </div>
           </div>

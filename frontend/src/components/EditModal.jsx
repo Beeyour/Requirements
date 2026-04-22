@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next' // 1. Import the hook
 import ConflictReport from './ConflictReport'
 
 export default function EditModal({ requirement, onSave, onClose, saving }) {
+  const { t } = useTranslation() // 2. Initialize the hook
+
   const [description, setDescription] = useState(requirement?.description || '')
   const [changeReason, setChangeReason] = useState('')
   const [conflictReport, setConflictReport] = useState(null)
@@ -29,11 +32,12 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
   const hasChanged = description.trim() !== requirement.description.trim()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    // 3. Added 'text-start' to the wrapper to ensure text aligns correctly based on language direction
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-start">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-800">Edit Requirement</h2>
+            <h2 className="text-lg font-semibold text-slate-800">{t('edit_req_title')}</h2>
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -52,32 +56,39 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
                   : 'bg-purple-100 text-purple-700 border-purple-200'
               }`}
             >
-              {requirement.type}
+              {/* Translate the requirement type badge dynamically */}
+              {t(requirement.type)}
             </span>
-            <span className="text-xs text-slate-400 font-mono">v{requirement.version_number}</span>
+            <span className="text-xs text-slate-400 font-mono">
+              {t('version_prefix')}{requirement.version_number}
+            </span>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t('description_label')}
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
-              placeholder="The system shall..."
+              // Added text-start here
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none text-start"
+              placeholder={t('desc_placeholder')}
             />
           </div>
 
           <div className="mb-5">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Reason for change <span className="text-slate-400 font-normal">(optional)</span>
+              {t('reason_label')} <span className="text-slate-400 font-normal">{t('optional')}</span>
             </label>
             <input
               type="text"
               value={changeReason}
               onChange={(e) => setChangeReason(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              placeholder="e.g. Clarified scope based on client feedback"
+              // Added text-start here
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-start"
+              placeholder={t('reason_placeholder')}
             />
           </div>
 
@@ -90,7 +101,7 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
                   clipRule="evenodd"
                 />
               </svg>
-              Saved successfully — no conflicts detected.
+              {t('save_success')}
             </p>
           )}
 
@@ -101,7 +112,7 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
               onClick={onClose}
               className="flex-1 py-2 px-4 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
             >
-              {saved ? 'Close' : 'Cancel'}
+              {saved ? t('close') : t('cancel')}
             </button>
             {!saved && (
               <button
@@ -126,7 +137,7 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
                     />
                   </svg>
                 )}
-                Save & Check Conflicts
+                {t('save_check_conflicts')}
               </button>
             )}
           </div>
