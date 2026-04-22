@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import apiClient from '../api/client'
+import { useTranslation } from 'react-i18next'
 
 export function useChat(projectId) {
   const [messages, setMessages] = useState([])
