@@ -1,18 +1,27 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next' // 1. Import the hook
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
-  const { t } = useTranslation() // 2. Initialize the hook
+  
+  // 1. Grab i18n along with t from the hook
+  const { t, i18n } = useTranslation() 
 
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // 2. Add the exact same toggle function we used in the Navbar
+  const toggleLanguage = () => {
+    const currentLang = i18n?.language || 'en';
+    const newLang = currentLang.startsWith('en') ? 'ar' : 'en';
+    i18n.changeLanguage(newLang);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -26,7 +35,6 @@ export default function LoginPage() {
       }
       navigate('/')
     } catch (err) {
-      // 3. Use the translated fallback error message
       setError(err.response?.data?.detail || t('auth_failed'))
     } finally {
       setLoading(false)
@@ -34,15 +42,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+    // Make sure this wrapper is relative so our absolute button positions correctly
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4 relative">
+      
+      {/* --- NEW FLOATING LANGUAGE BUTTON --- */}
+      <div className="absolute top-6 end-6">
+        <button 
+          onClick={toggleLanguage}
+          className="text-sm font-medium text-slate-600 hover:text-brand-600 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm border border-slate-200 transition-all hover:shadow hover:-translate-y-0.5"
+        >
+          {t('change_language')}
+        </button>
+      </div>
+      {/* ------------------------------------ */}
+
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-brand-600 rounded-xl mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-brand-600 rounded-xl mb-4 shadow-sm">
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          {/* 4. Use the translated title we set up earlier for the Navbar */}
           <h1 className="text-2xl font-bold text-slate-900">{t('srs_analyst')}</h1>
           <p className="text-slate-500 text-sm mt-1">{t('srs_analyst_subtitle')}</p>
         </div>
@@ -67,7 +87,6 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                // Added text-start and dir="ltr" to ensure emails always type correctly even in Arabic UI
                 className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-start"
                 placeholder={t('email_placeholder')}
                 dir="ltr" 
@@ -81,7 +100,6 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
-                // Added text-start and dir="ltr"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-start"
                 placeholder={t('password_placeholder')}
                 dir="ltr"
