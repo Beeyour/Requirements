@@ -16,11 +16,11 @@ export function useChat(projectId) {
       const { data } = await apiClient.get(`/chat/${projectId}/history`)
       setMessages(data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load history')
+      setError(err.response?.data?.detail || t('err_load_history'))
     } finally {
       setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, t])
 
   const startInterview = useCallback(async () => {
     if (!projectId) return
@@ -28,9 +28,9 @@ export function useChat(projectId) {
       const { data } = await apiClient.post(`/chat/${projectId}/start`)
       setMessages([data])
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to start interview')
+      setError(err.response?.data?.detail || t('err_start_interview'))
     }
-  }, [projectId])
+  }, [projectId, t])
 
   const sendMessage = useCallback(
     async (content) => {
