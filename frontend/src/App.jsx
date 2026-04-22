@@ -4,6 +4,8 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import InterviewPage from './pages/InterviewPage'
 import SRSPage from './pages/SRSPage'
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function ProtectedRoute() {
   const { isAuthenticated } = useAuth()
@@ -16,6 +18,14 @@ function PublicRoute() {
 }
 
 export default function App() {
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    // This flips the entire HTML document direction based on the language
+    document.documentElement.dir = i18n.dir();
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
   return (
     <AuthProvider>
       <BrowserRouter>
