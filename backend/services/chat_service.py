@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from datetime import timezone
 from fastapi import HTTPException
 from backend.models import Project, ConversationHistory
 from typing import List
@@ -25,12 +26,15 @@ def get_active_history(db: Session, project_id: int) -> List[ConversationHistory
     )
 
 def format_message(msg: ConversationHistory):
-    # Maintains ISO 8601 for frontend compatibility
+    # ensure the timestamp is on UTC format
+    ts = msg.timestamp
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
     return {
         "id": msg.id,
         "role": msg.role,
         "content": msg.content,
-        "timestamp": msg.timestamp.isoformat(),
+        "timestamp": ts,
     }
 
 async def start_new_interview(db: Session, project: Project):
