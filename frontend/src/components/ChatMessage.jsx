@@ -1,10 +1,6 @@
 export default function ChatMessage({ message }) {
   const isUser = message.role === 'user'
 
-  const timestamp = message.timestamp.endsWith('Z') 
-    ? message.timestamp 
-    : `${message.timestamp}Z`;
-
   const time = new Date(message.timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
