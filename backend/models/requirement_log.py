@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -19,3 +20,23 @@ class RequirementLog(Base):
         )
 
     requirement = relationship("Requirement", back_populates="logs")
+=======
+from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime
+from sqlalchemy.orm import relationship
+from datetime import datetime, timezone
+from database import Base
+
+
+class RequirementLog(Base):
+    __tablename__ = "requirement_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    requirement_id = Column(Integer, ForeignKey("requirements.id"), nullable=False)
+    change_reason = Column(Text)
+    timestamp = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+        )
+
+    requirement = relationship("Requirement", back_populates="logs")
+>>>>>>> 5b97499 (chore: apply .gitignore and remove cached files)

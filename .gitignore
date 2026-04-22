@@ -1,7 +1,8 @@
-__pycache__/
+_pycache_/
 *.pyc
 .env
 venv/
+<<<<<<< HEAD
 <<<<<<< HEAD
 .DS_Store
 <<<<<<< HEAD
@@ -12,3 +13,7 @@ node_modules/
 =======
 .DS_Store
 >>>>>>> 083f654 (try to solve the history time issue)
+=======
+.DS_Store
+docker-compose.override.yml
+>>>>>>> 5b97499 (chore: apply .gitignore and remove cached files)
