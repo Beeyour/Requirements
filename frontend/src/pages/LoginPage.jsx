@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next' // 1. Import the hook
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation() // 2. Initialize the hook
+
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,7 +26,8 @@ export default function LoginPage() {
       }
       navigate('/')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Authentication failed. Please try again.')
+      // 3. Use the translated fallback error message
+      setError(err.response?.data?.detail || t('auth_failed'))
     } finally {
       setLoading(false)
     }
@@ -38,44 +42,49 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">SRS Analyst</h1>
-          <p className="text-slate-500 text-sm mt-1">AI-driven requirements engineering</p>
+          {/* 4. Use the translated title we set up earlier for the Navbar */}
+          <h1 className="text-2xl font-bold text-slate-900">{t('srs_analyst')}</h1>
+          <p className="text-slate-500 text-sm mt-1">{t('srs_analyst_subtitle')}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-800 mb-5">
-            {isRegister ? 'Create an account' : 'Sign in to continue'}
+          <h2 className="text-lg font-semibold text-slate-800 mb-5 text-start">
+            {isRegister ? t('create_account_title') : t('sign_in_title')}
           </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <div className="text-start">
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('email_label')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                placeholder="you@example.com"
+                // Added text-start and dir="ltr" to ensure emails always type correctly even in Arabic UI
+                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-start"
+                placeholder={t('email_placeholder')}
+                dir="ltr" 
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <div className="text-start">
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('password_label')}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                placeholder="••••••••"
+                // Added text-start and dir="ltr"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-start"
+                placeholder={t('password_placeholder')}
+                dir="ltr"
               />
             </div>
             <button
@@ -89,17 +98,17 @@ export default function LoginPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
               )}
-              {isRegister ? 'Create account' : 'Sign in'}
+              {isRegister ? t('create_account_btn') : t('sign_in_btn')}
             </button>
           </form>
 
           <p className="mt-4 text-center text-sm text-slate-500">
-            {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
+            {isRegister ? t('already_have_account') : t('dont_have_account')}{' '}
             <button
               onClick={() => { setIsRegister(!isRegister); setError(null) }}
-              className="text-brand-600 hover:text-brand-700 font-medium"
+              className="text-brand-600 hover:text-brand-700 font-medium ms-1"
             >
-              {isRegister ? 'Sign in' : 'Register'}
+              {isRegister ? t('sign_in_btn') : t('register_link')}
             </button>
           </p>
         </div>

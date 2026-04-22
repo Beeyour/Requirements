@@ -85,7 +85,22 @@ const resources = {
       "no_reqs_yet": "No {{type}} requirements yet.",
       "interview_back": "Interview",
       "functional_lower": "functional",
-      "non_functional_lower": "non-functional"
+      "non_functional_lower": "non-functional",
+
+      // Login Page
+      "srs_analyst_subtitle": "AI-driven requirements engineering",
+      "create_account_title": "Create an account",
+      "sign_in_title": "Sign in to continue",
+      "auth_failed": "Authentication failed. Please try again.",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "password_label": "Password",
+      "password_placeholder": "••••••••",
+      "create_account_btn": "Create account",
+      "sign_in_btn": "Sign in",
+      "already_have_account": "Already have an account?",
+      "dont_have_account": "Don't have an account?",
+      "register_link": "Register"
     }
   },
   ar: {
@@ -168,7 +183,22 @@ const resources = {
       "no_reqs_yet": "لا توجد متطلبات {{type}} بعد.",
       "interview_back": "المقابلة",
       "functional_lower": "وظيفية",
-      "non_functional_lower": "غير وظيفية"
+      "non_functional_lower": "غير وظيفية",
+
+      // Login Page
+      "srs_analyst_subtitle": "هندسة المتطلبات بالذكاء الاصطناعي",
+      "create_account_title": "إنشاء حساب جديد",
+      "sign_in_title": "تسجيل الدخول للمتابعة",
+      "auth_failed": "فشلت المصادقة. يرجى المحاولة مرة أخرى.",
+      "email_label": "البريد الإلكتروني",
+      "email_placeholder": "you@example.com",
+      "password_label": "كلمة المرور",
+      "password_placeholder": "••••••••",
+      "create_account_btn": "إنشاء حساب",
+      "sign_in_btn": "تسجيل الدخول",
+      "already_have_account": "لديك حساب بالفعل؟",
+      "dont_have_account": "ليس لديك حساب؟",
+      "register_link": "تسجيل حساب جديد"
     }
   }
 };
