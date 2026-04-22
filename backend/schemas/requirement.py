@@ -2,17 +2,10 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Any, Dict
 from datetime import datetime
-from enum import Enum
+from backend.enums import ReqType, ReqPriority
 
-# Re-defining Enums for validation consistency (matches your SQLAlchemy Enums)
-class ReqType(str, Enum):
-    FUNCTIONAL = "Functional"
-    NON_FUNCTIONAL = "Non-Functional"
 
-class ReqPriority(str, Enum):
-    HIGH = "High"
-    MEDIUM = "Medium"
-    LOW = "Low"
+
 
 # Response Schemas
 

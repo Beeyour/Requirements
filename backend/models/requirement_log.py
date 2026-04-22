@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.database import Base
 
 # Audit logs for requirement history and change tracking.
@@ -13,6 +13,8 @@ class RequirementLog(Base):
 
     old_description = Column(Text, nullable=True)
     change_reason = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
 
     requirement = relationship("Requirement", back_populates="logs")

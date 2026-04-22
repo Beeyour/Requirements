@@ -14,7 +14,7 @@ class AnthropicAdapter(BaseLLMAdapter):
         self.client = anthropic.AsyncAnthropic(api_key=self.api_key)
 
     async def call(self, model: str, system_prompt: str, messages: List[Dict[str, str]], 
-            temperature: float, max_tokens: int) -> str:
+            temperature: float, max_tokens: int, is_json: bool) -> str:
         
         # Filter messages to include only 'user' and 'assistant' roles
         filtered_msgs = [m for m in messages if m["role"] in ("user", "assistant")]

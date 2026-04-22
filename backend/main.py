@@ -44,7 +44,7 @@ app.include_router(api.projects, prefix="/projects", tags=["Projects"])
 app.include_router(api.chat, tags=["Chat"]) 
 
 # Requirements: Endpoints like /req/generate-srs
-app.include_router(api.requirements, prefix="/req", tags=["Requirements"])
+app.include_router(api.requirements, prefix="/requirements", tags=["Requirements"])
 
 # Info: Endpoints like /info/models
 app.include_router(api.models_api, tags=["Models Info"])
