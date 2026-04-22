@@ -55,7 +55,11 @@ export default function InterviewPage() {
   }, [messages, loading])
 
   const { isListening, toggleListening } = useVoiceToText((transcript) => {
-    setInput((prev) => prev + (prev ? ' ' : '') + transcript);
+    // Use the functional update to ensure we don't lose typed text
+    setInput((prev) => {
+      const newText = prev.trim() ? `${prev} ${transcript}` : transcript;
+      return newText;
+    });
   });
   const handleSend = async (e) => {
     e.preventDefault()
@@ -195,14 +199,24 @@ export default function InterviewPage() {
             />
             {/* MICROPHONE BUTTON */}
             <button
-              type="button"
+              type="button" // Remember: this is vital so it doesn't submit the form!
               onClick={toggleListening}
-              className={`p-3 rounded-xl transition-colors flex-shrink-0 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              className={`p-3 rounded-xl transition-all ${isListening
+                  ? 'bg-red-500 text-white scale-110 shadow-lg'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
+              {isListening ? (
+                <div className="flex gap-1">
+                  <span className="w-1 h-4 bg-white animate-bounce" />
+                  <span className="w-1 h-4 bg-white animate-bounce [animation-delay:0.2s]" />
+                  <span className="w-1 h-4 bg-white animate-bounce [animation-delay:0.4s]" />
+                </div>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              )}
             </button>
             <button
               type="submit"
