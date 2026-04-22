@@ -14,7 +14,12 @@ export default function Navbar({ projectName, backTo, backLabel }) {
   }
 
   const toggleLanguage = () => {
-    const newLang = i18n.language.startsWith('en') ? 'ar' : 'en';
+    // Safely get the language. If it's undefined, pretend it's 'en'
+    const currentLang = i18n?.language || 'en';
+    
+    // Switch between 'ar' and 'en'
+    const newLang = currentLang.startsWith('en') ? 'ar' : 'en';
+    
     i18n.changeLanguage(newLang);
   }
 
