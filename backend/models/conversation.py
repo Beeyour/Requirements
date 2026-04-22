@@ -1,7 +1,7 @@
 import enum
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.database import Base
 
 class ChatRole(str, enum.Enum):
@@ -17,7 +17,7 @@ class ConversationHistory(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), index=True, nullable=False)
     role = Column(SQLEnum(ChatRole), default=ChatRole.USER, nullable=False)
     content = Column(Text, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_archived = Column(Boolean, default=False, nullable=False)
 
     project = relationship("Project", back_populates="conversations")
