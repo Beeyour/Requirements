@@ -1,19 +1,6 @@
-_pycache_/
+__pycache__/
 *.pyc
 .env
 venv/
-<<<<<<< HEAD
-<<<<<<< HEAD
-.DS_Store
-<<<<<<< HEAD
-docker-compose.override.yml
-=======
-node_modules/
->>>>>>> 9c746a3 (changes to deploy on vercel)
-=======
-.DS_Store
->>>>>>> 083f654 (try to solve the history time issue)
-=======
 .DS_Store
 docker-compose.override.yml
->>>>>>> 5b97499 (chore: apply .gitignore and remove cached files)
