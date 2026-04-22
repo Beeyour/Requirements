@@ -140,7 +140,7 @@ export default function InterviewPage() {
         <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
 
         {/* Model badge bar */}
-        {{ project && (
+        { project && (
           <div className="border-b border-slate-100 px-6 bg-white/50">
             <ModelSelector
               value={currentModelKey}
