@@ -140,20 +140,13 @@ export default function InterviewPage() {
         <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
 
         {/* Model badge bar */}
-        {project && (
-          <div className="border-b border-slate-100 px-6 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span>{t('model_label')}</span>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-medium ${providerColorClass}`}>
-                {PROVIDER_LABELS[project.model_provider] || project.model_provider} — {currentModelName}
-              </span>
-            </div>
-            <button
-              onClick={() => { setPendingModel(currentModelKey); setShowModelModal(true) }}
-              className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
-            >
-              {t('change_btn')}
-            </button>
+        {{ project && (
+          <div className="border-b border-slate-100 px-6 bg-white/50">
+            <ModelSelector
+              value={currentModelKey}
+              onChange={handleModelChange}
+              models={models}
+            />
           </div>
         )}
 
@@ -271,12 +264,6 @@ export default function InterviewPage() {
           </div>
         </div>
       </div>
-              {/**Model selector */}
-      <ModelSelector
-        value={currentModelKey}
-        onChange={handleModelChange}
-        models={models}
-      />
     </div>
   )
 }
