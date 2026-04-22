@@ -39,6 +39,8 @@ app.include_router(api.projects, prefix="/projects", tags=["Projects"])
 app.include_router(api.chat, tags=["Chat"]) 
 app.include_router(api.requirements, prefix="/requirements", tags=["Requirements"])
 app.include_router(api.models_api, tags=["Models Info"])
+app.include_router(api.uml, tags=["UML"])
+
 
 
 
