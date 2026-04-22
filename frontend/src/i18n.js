@@ -29,7 +29,14 @@ const resources = {
       "no_projects_desc": "Create your first project to start an AI requirements interview.",
       "delete_title": "Delete project?",
       "delete_desc": "This will permanently delete the project, all conversations, and all requirements.",
-      "delete": "Delete"
+      "delete": "Delete",
+
+      // Project card
+      "interview_btn": "Interview",
+      "view_srs_btn": "View SRS",
+      "req_singular": "req",
+      "reqs_plural": "reqs",
+      "delete_project_title": "Delete project"
     }
   },
   ar: {
@@ -56,7 +63,14 @@ const resources = {
       "no_projects_desc": "قم بإنشاء مشروعك الأول لبدء مقابلة المتطلبات مع الذكاء الاصطناعي.",
       "delete_title": "حذف المشروع؟",
       "delete_desc": "سيؤدي هذا إلى حذف المشروع وجميع المحادثات والمتطلبات بشكل دائم.",
-      "delete": "حذف"
+      "delete": "حذف",
+
+      // Project Card
+      "interview_btn": "مقابلة",
+      "view_srs_btn": "عرض SRS",
+      "req_singular": "متطلب",
+      "reqs_plural": "متطلبات",
+      "delete_project_title": "حذف المشروع"
     }
   }
 };
