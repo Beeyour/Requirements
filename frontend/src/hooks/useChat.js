@@ -3,6 +3,7 @@ import apiClient from '../api/client'
 import { useTranslation } from 'react-i18next'
 
 export function useChat(projectId) {
+  const { t } = useTranslation()
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [isSaturated, setIsSaturated] = useState(false)
