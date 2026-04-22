@@ -18,7 +18,7 @@ def format_requirements_for_ai(requirements: List[Requirement]) -> str:
 
 
 
-async def generate_usecase_json(formatted_requirements: str, provider: str, model: str) -> str:
+async def generate_usecase_json(formatted_requirements: str, provider: str = None, model: str= None) -> str:
     if not formatted_requirements:
         raise ValueError("No requirements provided to generate UML.")
 
