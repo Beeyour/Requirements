@@ -8,7 +8,7 @@ from backend.api.dependencies import get_current_user
 from backend.services import requirement_service
 from backend.services.uml import usecase_service
 from backend.services.uml import utils
-
+from backend.services.llm.config import DEFAULT_PROVIDER, DEFAULT_MODEL
 
 
 
@@ -21,7 +21,7 @@ async def get_uml(project_id: int, db: Session = Depends(get_db)):
 
     ai_json = usecase_service.format_requirements_for_ai(requirements)
 
-    usecase_json = await usecase_service.generate_usecase_json(ai_json)
+    usecase_json = await usecase_service.generate_usecase_json(ai_json, DEFAULT_PROVIDER, DEFAULT_MODEL)
 
     puml_code = usecase_service.generate_plantuml(usecase_json)
 
