@@ -1,14 +1,17 @@
 from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from database import Base
+from backend.database import Base
 
-
+# Audit logs for requirement history and change tracking.
 class RequirementLog(Base):
     __tablename__ = "requirement_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    requirement_id = Column(Integer, ForeignKey("requirements.id"), nullable=False)
+    requirement_id = Column(Integer, ForeignKey("requirements.id"), index=True, nullable=False) # أضفنا Index
+
+
+    old_description = Column(Text, nullable=True)
     change_reason = Column(Text)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
