@@ -21,7 +21,7 @@ export default function InterviewPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const projectId = parseInt(id)
-  
+
   const { t } = useTranslation() // 2. Initialize the hook
 
   const [project, setProject] = useState(null)
@@ -103,8 +103,14 @@ export default function InterviewPage() {
     await startInterview()
   }
 
-  const handleSaveModel = async () => {
-    const [provider, modelName] = pendingModel.split(':')
+
+  const handleModelChange = async (newModelValue) => {
+
+    if (newModelValue === currentModelKey) return;
+
+    // Split the direct input instead of pendingModel
+    const [provider, modelName] = newModelValue.split(':')
+
     setSavingModel(true)
     try {
       const { data } = await apiClient.patch(`/projects/${projectId}/model`, {
@@ -112,9 +118,8 @@ export default function InterviewPage() {
         model_name: modelName,
       })
       setProject(data)
-      setShowModelModal(false)
+
     } catch (err) {
-      // 5. Translate API error fallback
       alert(err.response?.data?.detail || t('err_update_model'))
     } finally {
       setSavingModel(false)
@@ -191,7 +196,7 @@ export default function InterviewPage() {
         {/* LOADING INDICATOR */}
         {loading && (
           <div className="flex justify-start mb-4">
-             {/* AI Avatar and Bounce dots code... */}
+            {/* AI Avatar and Bounce dots code... */}
           </div>
         )}
 
@@ -226,11 +231,11 @@ export default function InterviewPage() {
             />
             {/* MICROPHONE BUTTON */}
             <button
-              type="button" 
+              type="button"
               onClick={toggleListening}
               className={`p-3 rounded-xl transition-all ${isListening
-                  ? 'bg-red-500 text-white scale-110 shadow-lg'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-red-500 text-white scale-110 shadow-lg'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               {isListening ? (
@@ -266,40 +271,12 @@ export default function InterviewPage() {
           </div>
         </div>
       </div>
-
-      {/* Change Model Modal */}
-      {showModelModal && (
-        // 7. Add text-start to modal wrapper
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-start">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-800">{t('change_ai_model')}</h3>
-              <button onClick={() => setShowModelModal(false)} className="text-slate-400 hover:text-slate-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-sm text-slate-500 mb-4">
-              {t('change_model_desc')}
-            </p>
-            <ModelSelector value={pendingModel} onChange={setPendingModel} models={models} />
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowModelModal(false)} className="flex-1 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleSaveModel}
-                disabled={savingModel || pendingModel === currentModelKey}
-                className="flex-1 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {savingModel && <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-                {t('save')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/**Model selector */}
+      <ModelSelector
+        value={currentModelKey}
+        onChange={handleModelChange}
+        models={models}
+      />
     </div>
   )
 }
