@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 export default function ChatMessage({ message }) {
   const { t, i18n } = useTranslation()
   const isUser = message.role === 'user'
@@ -5,16 +7,18 @@ export default function ChatMessage({ message }) {
   // THE FIX: Ensure the string is treated as UTC
   const formatTime = (rawTimestamp) => {
     if (!rawTimestamp) return ''
-    
+
     // If the string doesn't end with 'Z', add it to force UTC interpretation
     const utcString = rawTimestamp.endsWith('Z') ? rawTimestamp : `${rawTimestamp}Z`
-    
+
     return new Date(utcString).toLocaleTimeString(i18n.language, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
     })
   }
+
+  const time = formatTime(message.timestamp)
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -24,15 +28,14 @@ export default function ChatMessage({ message }) {
           AI
         </div>
       )}
-      
+
       {/* Message Bubble Container */}
       <div className={`max-w-[75%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
         <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap text-start ${
-            isUser
+          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap text-start ${isUser
               ? 'bg-brand-600 text-white rounded-ee-sm'
               : 'bg-white border border-slate-200 text-slate-800 rounded-es-sm shadow-sm'
-          }`}
+            }`}
         >
           {message.content}
         </div>
