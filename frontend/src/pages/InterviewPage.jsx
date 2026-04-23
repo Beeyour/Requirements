@@ -31,10 +31,10 @@ export default function InterviewPage() {
   const [srsData, setSrsData] = useState(null) // Stores the complete SRS object {id, content, ...}
   const [srsExists, setSrsExists] = useState(false) // Simple flag for UI rendering
   const [loadingSrs, setLoadingSrs] = useState(true) // Initial page-load check
-  
+
   // New state to manage the view of the right functional pane ('buttons' or 'srsViewer')
   const [rightPaneView, setRightPaneView] = useState('buttons')
-  
+
   // Existing artifact logic remains
   const [artifacts, setArtifacts] = useState({
     useCase: false,
@@ -108,11 +108,11 @@ export default function InterviewPage() {
     try {
       // ✅ Hit the POST /requirements/generate-srs API exactly from your docs
       const { data } = await apiClient.post('/requirements/generate-srs', { project_id: projectId })
-      
+
       // On success, update states to show it exists and what it is.
       setSrsData(data)
       setSrsExists(true)
-      
+
       // Show confirmation
       alert(t('srs_generated_success') || 'SRS Generated successfully.')
     } catch (err) {
@@ -127,23 +127,25 @@ export default function InterviewPage() {
     try {
       // Hit the PUT API. 
       // NOTE: If your backend requires an empty body, change this to: apiClient.put(`...`, {})
-      await apiClient.put(`/requirements/update-requirement/${projectId}`)
-      
+      await apiClient.put(`/requirements/update-requirement/${projectId}`, {
+        project_id: projectId
+      });
+
       // Redirect to the View SRS page
       navigate(`/project/${projectId}/srs`)
 
     } catch (err) {
       console.error("Full update error:", err.response?.data);
-      
+
       // Safely handle the error message so it doesn't say [object Object]
       let errorMsg = t('err_update_srs', 'Failed to update SRS.');
       const detail = err.response?.data?.detail;
-      
+
       if (detail) {
         // If the backend sent an object/array, turn it into readable text
         errorMsg = typeof detail === 'object' ? JSON.stringify(detail, null, 2) : detail;
       }
-      
+
       alert(`Update Error:\n${errorMsg}`);
     } finally {
       setGenerating(false)
@@ -153,7 +155,7 @@ export default function InterviewPage() {
   // 3. View SRS Document (Sets view state, no API call needed if data already fetched)
   const handleViewSrs = () => {
     if (!srsExists) return;
-    
+
     // Redirect exactly like your original code did
     navigate(`/project/${projectId}/srs`);
   }
@@ -181,7 +183,7 @@ export default function InterviewPage() {
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
-      
+
       {/* --- HEADER --- */}
       <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
         <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
@@ -194,16 +196,16 @@ export default function InterviewPage() {
 
       {/* --- MAIN LAYOUT WITH PADDING & SEPARATION --- */}
       <div className="flex-1 flex flex-row overflow-hidden p-4 gap-4">
-        
+
         {/* ================= LEFT SECTION: CHAT (3/4 WIDTH) ================= */}
         <div className="w-3/4 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
-          
+
           <div className="flex-1 overflow-y-auto px-6 py-8 w-full scrollbar-hide">
             <div className="max-w-4xl mx-auto">
-              {error && ( <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">{error}</div> )}
+              {error && (<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">{error}</div>)}
               {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
-              {loading && ( <div className="flex justify-start mb-4 animate-in fade-in slide-in-from-bottom-2"><div className="flex gap-3 max-w-[80%]"><div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm"><span className="text-xs font-bold">AI</span></div><div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-none px-4 py-3.5 shadow-sm flex items-center h-[42px]"><div className="flex gap-1.5 items-center"><div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} /><div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} /><div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} /></div></div></div></div> )}
-              {sendError && ( <div className="mb-4 animate-in fade-in slide-in-from-bottom-2"><div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center gap-2 text-start"><svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{sendError}</div></div> )}
+              {loading && (<div className="flex justify-start mb-4 animate-in fade-in slide-in-from-bottom-2"><div className="flex gap-3 max-w-[80%]"><div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm"><span className="text-xs font-bold">AI</span></div><div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-none px-4 py-3.5 shadow-sm flex items-center h-[42px]"><div className="flex gap-1.5 items-center"><div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} /><div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} /><div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} /></div></div></div></div>)}
+              {sendError && (<div className="mb-4 animate-in fade-in slide-in-from-bottom-2"><div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center gap-2 text-start"><svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{sendError}</div></div>)}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -211,7 +213,7 @@ export default function InterviewPage() {
           {/* CHAT INPUT BOX */}
           <div className="bg-white px-6 py-4 border-t border-slate-100">
             <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-brand-300 focus-within:ring-1 focus-within:ring-brand-300 transition-all">
-              <form onSubmit={handleSend} className="flex gap-2 items-end"><textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e) } }} rows={1} placeholder={t('type_answer')} className="flex-1 bg-transparent px-3 py-2 text-sm resize-none focus:outline-none max-h-32 overflow-y-auto text-start" style={{ minHeight: '40px' }} /><div className="flex gap-1 pb-1 pr-1"><button type="button" onClick={toggleListening} className={`p-2.5 rounded-xl transition-all ${isListening ? 'bg-red-500 text-white scale-110 shadow-md' : 'text-slate-400 hover:bg-slate-200 hover:text-slate-600' }`}>{isListening ? ( <div className="flex gap-[3px] h-4 items-center"><span className="w-1 h-2 bg-white animate-bounce" /><span className="w-1 h-4 bg-white animate-bounce [animation-delay:0.2s]" /><span className="w-1 h-3 bg-white animate-bounce [animation-delay:0.4s]" /></div> ) : ( <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg> )}</button><button type="submit" disabled={loading || !input.trim()} className="p-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><svg className="w-4 h-4 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button></div></form>
+              <form onSubmit={handleSend} className="flex gap-2 items-end"><textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e) } }} rows={1} placeholder={t('type_answer')} className="flex-1 bg-transparent px-3 py-2 text-sm resize-none focus:outline-none max-h-32 overflow-y-auto text-start" style={{ minHeight: '40px' }} /><div className="flex gap-1 pb-1 pr-1"><button type="button" onClick={toggleListening} className={`p-2.5 rounded-xl transition-all ${isListening ? 'bg-red-500 text-white scale-110 shadow-md' : 'text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>{isListening ? (<div className="flex gap-[3px] h-4 items-center"><span className="w-1 h-2 bg-white animate-bounce" /><span className="w-1 h-4 bg-white animate-bounce [animation-delay:0.2s]" /><span className="w-1 h-3 bg-white animate-bounce [animation-delay:0.4s]" /></div>) : (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>)}</button><button type="submit" disabled={loading || !input.trim()} className="p-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><svg className="w-4 h-4 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button></div></form>
             </div>
             <div className="max-w-4xl mx-auto flex items-center justify-between mt-3 px-2"><p className="text-xs text-slate-400 font-medium">{messages.length} {messages.length === 1 ? t('message_singular') : t('messages_plural')}</p><button onClick={handleReset} className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors">{t('reset_conv')}</button></div>
           </div>
@@ -220,17 +222,17 @@ export default function InterviewPage() {
         {/* ================= RIGHT SECTION: STUDIO FUNCTIONAL (1/4 WIDTH) ================= */}
         <div className="w-1/4 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
           <div className="p-6 overflow-y-auto h-full">
-            
+
             {/* STUDIO HEADER WITH THE VIEW BUTTON */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
-                {isSaturated && ( <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span> )}
+                {isSaturated && (<span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span>)}
               </div>
-              
+
               {/* View SRS Button - Now redirects to the SRS page */}
               {srsExists && (
-                <button 
+                <button
                   onClick={handleViewSrs}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-all text-xs font-medium"
                 >
@@ -246,7 +248,7 @@ export default function InterviewPage() {
 
             {/* NotebookLM Style Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
-              
+
               {/* 1. Generate/Update SRS Button */}
               <button
                 onClick={srsExists ? handleSrsUpdate : handleInitialSrsGeneration}
@@ -254,23 +256,23 @@ export default function InterviewPage() {
                 className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-blue-50/60 hover:bg-blue-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-blue-200"
               >
                 <div className="text-blue-600">
-                  {generating ? ( <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> ) : (
+                  {generating ? (<svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>) : (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">
-                  {srsExists ? t('update_srs', 'Update SRS') : t('generate_srs', 'Generate SRS')}<br/>Requirement
+                  {srsExists ? t('update_srs', 'Update SRS') : t('generate_srs', 'Generate SRS')}<br />Requirement
                 </span>
               </button>
 
               {/* Remaining Diagram Buttons */}
-              <button disabled={!srsExists} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-purple-50/60 hover:bg-purple-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-purple-200"><div className="text-purple-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Use Case<br/>Diagram</span></button>
-              <button disabled={!srsExists} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-yellow-50/80 hover:bg-yellow-100 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-yellow-200"><div className="text-yellow-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Class<br/>Diagram</span></button>
-              <button disabled={!artifacts.useCase || !artifacts.class} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-emerald-50/60 hover:bg-emerald-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-emerald-200"><div className="text-emerald-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Activity<br/>Diagram</span></button>
+              <button disabled={!srsExists} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-purple-50/60 hover:bg-purple-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-purple-200"><div className="text-purple-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Use Case<br />Diagram</span></button>
+              <button disabled={!srsExists} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-yellow-50/80 hover:bg-yellow-100 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-yellow-200"><div className="text-yellow-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Class<br />Diagram</span></button>
+              <button disabled={!artifacts.useCase || !artifacts.class} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-emerald-50/60 hover:bg-emerald-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-emerald-200"><div className="text-emerald-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Activity<br />Diagram</span></button>
 
             </div>
           </div>
-        
+
           )
         </div>
       </div>
