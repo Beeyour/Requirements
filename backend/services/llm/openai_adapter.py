@@ -44,7 +44,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                 model=model,
                 messages=input_messages, # المسمى الصحيح هو messages وليس input
                 temperature=temperature,
-                max_tokens=max_tokens,    # المسمى الصحيح هو max_tokens وليس max_output_tokens
+                max_output_tokens=max_tokens,    # المسمى الصحيح هو max_tokens وليس max_output_tokens
                 response_format=response_format
             )
 
