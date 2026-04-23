@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next'
+import { useTextToSpeech } from '../hooks/useTextToSpeech'
 
 export default function ChatMessage({ message }) {
   const { t, i18n } = useTranslation()
   const isUser = message.role === 'user'
+  const { speak, stop, isSpeaking } = useTextToSpeech()
 
   // THE FIX: Ensure the string is treated as UTC
   const formatTime = (rawTimestamp) => {
@@ -39,7 +41,32 @@ export default function ChatMessage({ message }) {
         >
           {message.content}
         </div>
-        <span className="text-xs text-slate-400 mt-1 px-1">{time}</span>
+
+        {/* Time and Audio Controls Container */}
+        <div className="flex items-center gap-2 mt-1 px-1">
+          <span className="text-xs text-slate-400">{time}</span>
+
+          {/* 3. ONLY show the speaker icon for AI messages */}
+          {!isUser && (
+            <button
+              onClick={() => isSpeaking ? stop() : speak(message.content)}
+              className={`text-slate-400 hover:text-brand-600 transition-colors ${isSpeaking ? 'text-brand-600' : ''}`}
+              title={isSpeaking ? "Stop playback" : "Listen to message"}
+            >
+              {isSpeaking ? (
+                // Stop/Square Icon
+                <svg className="w-3.5 h-3.5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                  <rect x="5" y="5" width="10" height="10" />
+                </svg>
+              ) : (
+                // Play/Speaker Icon
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* User Avatar */}
