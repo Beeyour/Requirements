@@ -45,7 +45,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                 messages=input_messages, # المسمى الصحيح هو messages وليس input
                 temperature=temperature,
                 max_completion_tokens=max_tokens,    # المسمى الصحيح هو max_tokens وليس max_output_tokens
-                response_format=response_format
+                # response_format=response_format
             )
 
             return response.choices[0].message.content
