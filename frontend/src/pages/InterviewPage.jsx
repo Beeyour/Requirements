@@ -96,7 +96,7 @@ export default function InterviewPage() {
   const handleGenerateSRS = async () => {
     setGenerating(true)
     try {
-      await apiClient.post('/generate-srs', { project_id: projectId })
+      await apiClient.post(`/projects/${projectId}/generate-srs`)
       
       // Update local state to unlock dependent buttons
       setArtifacts(prev => ({ ...prev, srs: true }))
