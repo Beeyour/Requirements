@@ -50,6 +50,16 @@ export default function InterviewPage() {
     sequence: false,
   })
 
+  // Tracks whether each artifact was found on the server (persisted),
+  // as opposed to just generated in the current session.
+  const [persistedArtifacts, setPersistedArtifacts] = useState({
+    srs: false,
+    useCase: false,
+    class: false,
+    activity: false,
+    sequence: false,
+  })
+
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -65,17 +75,36 @@ export default function InterviewPage() {
     return exists
   }
 
+  // Fetches which diagrams already exist in the DB so returning users
+  // get their buttons unlocked immediately on mount.
+  const syncPersistedArtifacts = async () => {
+    try {
+      const { data } = await apiClient.get(`/projects/${projectId}/artifacts`)
+      // Expected shape: { srs, use_case, class, activity, sequence }
+      const synced = {
+        srs:      !!data.srs,
+        useCase:  !!data.use_case,
+        class:    !!data.class,
+        activity: !!data.activity,
+        sequence: !!data.sequence,
+      }
+      setPersistedArtifacts(synced)
+      // Merge into session artifacts so button-lock logic stays unified
+      setArtifacts((prev) => ({ ...prev, ...synced }))
+      if (synced.srs) setRequirementsReady(true)
+    } catch {
+      // Endpoint may not exist yet — fail silently, fall back to session state
+    }
+  }
+
   useEffect(() => {
     apiClient
       .get(`/projects/${projectId}`)
       .then(async ({ data }) => {
         setProject(data)
         setPendingModel(`${data.model_provider}:${data.model_name}`)
-        try {
-          await checkRequirementsExist()
-        } catch {
-          setRequirementsReady(false)
-        }
+        // Run both checks in parallel; neither should block the page from loading
+        await Promise.allSettled([checkRequirementsExist(), syncPersistedArtifacts()])
       })
       .catch(() => {})
   }, [projectId])
@@ -205,9 +234,13 @@ export default function InterviewPage() {
     ? models[project.model_provider]?.[project.model_name] || project.model_name
     : ''
 
-  const studioReady = isSaturated
-  const canGenerateBaseDiagrams = studioReady && requirementsReady
-  const canGenerateDependentDiagrams = canGenerateBaseDiagrams && artifacts.useCase && artifacts.class
+  const studioReady = isSaturated || requirementsReady
+
+  // Use Case & Class: enabled when requirements exist in DB OR interview is done
+  const canGenerateBaseDiagrams = requirementsReady || isSaturated
+
+  // Activity & Sequence: enabled only when their prerequisites are already generated
+  const canGenerateDependentDiagrams = artifacts.useCase && artifacts.class
   const buttonBaseClass =
     'flex flex-col items-start justify-between p-3.5 h-[90px] rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent'
   const activeSvgUrl = activeDiagram ? diagramSvgs[activeDiagram] : ''
@@ -360,11 +393,11 @@ export default function InterviewPage() {
                 </svg>
                 <span className="leading-relaxed"><strong>{t('info_complete')}</strong> {t('ready_generate')}</span>
               </div>
-            ) : (
+            ) : !requirementsReady && !isSaturated ? (
               <div className="mb-5 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
                 Continue the interview until saturation to unlock SRS and diagrams.
               </div>
-            )}
+            ) : null}
 
             {srsError && (
               <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{srsError}</div>
@@ -376,16 +409,15 @@ export default function InterviewPage() {
             <div className="mb-3 flex gap-2">
               <button
                 onClick={handleGenerateSRS}
-                disabled={srsLoading || !studioReady}
-                title={!studioReady ? 'Interview must be saturated first.' : ''}
+                disabled={srsLoading}
                 className="flex-1 h-10 px-3 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {srsLoading ? 'Generating...' : 'Generate SRS'}
               </button>
               <button
                 onClick={handleOpenRequirementsUpdate}
-                disabled={!studioReady}
-                title={!studioReady ? 'Interview must be saturated first.' : ''}
+                disabled={!requirementsReady}
+                title={!requirementsReady ? 'Generate SRS first.' : ''}
                 className="flex-1 h-10 px-3 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Update Requirements
