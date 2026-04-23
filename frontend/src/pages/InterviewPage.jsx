@@ -142,9 +142,18 @@ export default function InterviewPage() {
   }
 
   // 3. View SRS Document (Sets view state, no API call needed if data already fetched)
-  const handleViewSrs = () => {
-    if (!srsExists || !srsData) return;
-    setRightPaneView('srsViewer')
+  const handleViewSrs = async () => {
+    if (!srsExists) return;
+    
+    try {
+      // Hit the GET endpoint specifically when the user wants to view it
+      const { data } = await apiClient.get(`/requirements/${projectId}`)
+      setSrsData(data)
+      setRightPaneView('srsViewer')
+    } catch (err) {
+      console.error("Error fetching SRS document:", err)
+      alert(t('err_fetch_srs', 'Failed to load the SRS document.'))
+    }
   }
 
   // Existing voice/send/model handlers remain intact
@@ -209,8 +218,6 @@ export default function InterviewPage() {
         {/* ================= RIGHT SECTION: STUDIO FUNCTIONAL (1/4 WIDTH) ================= */}
         <div className="w-1/4 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
           
-          {/* ================= NEW CONDITIONAL RENDERING FOR RIGHT PANE ================= */}
-          
           {/* VIEW MODE 1: SRS VIEWER */}
           {rightPaneView === 'srsViewer' && srsData && (
             <div className="p-6 flex flex-col h-full">
@@ -218,16 +225,16 @@ export default function InterviewPage() {
                 <h2 className="text-lg font-semibold text-slate-800">SRS Document</h2>
                 <button 
                   onClick={() => setRightPaneView('buttons')}
-                  className="px-4 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 transition-colors"
                 >
                   {t('back_to_studio', 'Back to Studio')}
                 </button>
               </div>
               
-              {/* This is a simple viewer. I'm assuming srsData.content holds the text. */}
-              <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-5 overflow-y-auto text-sm text-slate-700 leading-relaxed scrollbar-hide">
-                {srsData.content ? (
-                  srsData.content // Replace with proper parsing if data is not plain text.
+              <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-5 overflow-y-auto text-sm text-slate-700 leading-relaxed scrollbar-hide whitespace-pre-wrap">
+                {/* Remember to change .srs_text to match your actual backend property! */}
+                {srsData.srs_text ? (
+                  srsData.srs_text 
                 ) : (
                   <p className="text-xs text-slate-400 italic text-center mt-10">Document content is unavailable.</p>
                 )}
@@ -240,50 +247,49 @@ export default function InterviewPage() {
           {rightPaneView === 'buttons' && (
             <div className="p-6 overflow-y-auto h-full">
               
+              {/* STUDIO HEADER WITH THE NEW VIEW BUTTON */}
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
-                {isSaturated && ( <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span> )}
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
+                  {isSaturated && ( <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span></span> )}
+                </div>
+                
+                {/* View SRS Button moved to the top right corner */}
+                {srsExists && (
+                  <button 
+                    onClick={handleViewSrs}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-all text-xs font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    {t('view_srs', 'View SRS')}
+                  </button>
+                )}
               </div>
 
               {isSaturated && (
                 <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-2xl text-xs text-green-800 flex items-start gap-2 shadow-sm"><svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg><span className="leading-relaxed"><strong>{t('info_complete')}</strong> {t('ready_generate')}</span></div>
               )}
 
-              {/* NotebookLM Style Buttons Grid (2 columns) */}
+              {/* NotebookLM Style Buttons Grid */}
               <div className="grid grid-cols-2 gap-3">
                 
-                {/* 1. SRS GROUP: Two distinct stacked buttons now occupy this slot */}
-                <div className="flex flex-col gap-2">
-                  
-                  {/* Button 1.1: Generate OR Update SRS */}
-                  <button
-                    onClick={srsExists ? handleSrsUpdate : handleInitialSrsGeneration}
-                    disabled={generating || loadingSrs} // Added a loadingSrs check for protection
-                    className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-blue-50/60 hover:bg-blue-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-blue-200"
-                  >
-                    <div className="text-blue-600">
-                      {generating ? ( <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      )}
-                    </div>
-                    {/* The label dynamically changes based on srsExists state */}
-                    <span className="font-medium text-slate-700 text-xs leading-tight">
-                      {srsExists ? t('update_srs', 'Update SRS') : t('generate_srs', 'Generate SRS')}<br/>Requirement
-                    </span>
-                  </button>
+                {/* 1. Generate/Update SRS Button (Now takes its full slot normally) */}
+                <button
+                  onClick={srsExists ? handleSrsUpdate : handleInitialSrsGeneration}
+                  disabled={generating || loadingSrs}
+                  className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-blue-50/60 hover:bg-blue-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-blue-200"
+                >
+                  <div className="text-blue-600">
+                    {generating ? ( <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    )}
+                  </div>
+                  <span className="font-medium text-slate-700 text-xs leading-tight">
+                    {srsExists ? t('update_srs', 'Update SRS') : t('generate_srs', 'Generate SRS')}<br/>Requirement
+                  </span>
+                </button>
 
-                  {/* Button 1.2: View SRS Document */}
-                  <button 
-                    onClick={handleViewSrs}
-                    disabled={!srsExists} // Only clickable when one has been created
-                    className="flex items-center justify-between w-full px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-50 text-xs font-medium"
-                  >
-                    <span>{t('view_srs', 'View SRS Document')}</span>
-                    <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  </button>
-                </div>
-
-                {/* The rest of the diagram buttons from previous logic remain */}
+                {/* Remaining Diagram Buttons */}
                 <button disabled={!srsExists} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-purple-50/60 hover:bg-purple-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-purple-200"><div className="text-purple-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Use Case<br/>Diagram</span></button>
                 <button disabled={!srsExists} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-yellow-50/80 hover:bg-yellow-100 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-yellow-200"><div className="text-yellow-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Class<br/>Diagram</span></button>
                 <button disabled={!artifacts.useCase || !artifacts.class} className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-emerald-50/60 hover:bg-emerald-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-emerald-200"><div className="text-emerald-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg></div><span className="font-medium text-slate-700 text-xs leading-tight">Activity<br/>Diagram</span></button>
