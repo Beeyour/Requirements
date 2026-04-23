@@ -13,9 +13,8 @@ class RequirementLog(Base):
 
     old_description = Column(Text, nullable=True)
     change_reason = Column(Text)
-    timestamp = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc)
-        )
+
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
 
     requirement = relationship("Requirement", back_populates="logs")

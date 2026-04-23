@@ -25,3 +25,12 @@ Used for visualizing the project structure.
 The engine running the FastAPI application inside Docker.
 - **Status Check:** Included in Docker logs.
 
+## UML Storage Migration Note
+After deploying the SSoT UML storage changes, new UML diagram tables are auto-created by `Base.metadata.create_all(engine)` on backend startup.
+
+Legacy tables are no longer referenced by ORM models and should be dropped manually in PostgreSQL:
+
+```sql
+DROP TABLE usecase_logs, usecases;
+```
+

@@ -21,8 +21,8 @@ class LLMFactory:
         # Returns a fresh instance of the requested adapter
         return adapter_class()
 
-async def call_llm(provider: str, model: str, system_prompt: str, messages: list, temperature=0.7, max_tokens=500):
+async def call_llm(provider: str, model: str, system_prompt: str, messages: list, temperature=0.7, max_tokens=500, is_json = False):
     # Change: Made this function 'async' and added 'await'
     # This ensures compatibility between the Async Adapters and the Async Agents
     adapter = LLMFactory.get_adapter(provider)
-    return await adapter.call(model, system_prompt, messages, temperature, max_tokens)
+    return await adapter.call(model, system_prompt, messages, temperature, max_tokens, is_json)

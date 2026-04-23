@@ -1,9 +1,9 @@
 import enum
+from sqlalchemy.sql import func
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from backend.database import Base
-
 class ChatRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"

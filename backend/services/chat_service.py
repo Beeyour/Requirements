@@ -27,14 +27,11 @@ def get_active_history(db: Session, project_id: int) -> List[ConversationHistory
 
 def format_message(msg: ConversationHistory):
     # ensure the timestamp is on UTC format
-    ts = msg.timestamp
-    if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=timezone.utc)
     return {
         "id": msg.id,
         "role": msg.role,
         "content": msg.content,
-        "timestamp": ts,
+        "timestamp": msg.timestamp.isoformat() if msg.timestamp else None, 
     }
 
 async def start_new_interview(db: Session, project: Project):

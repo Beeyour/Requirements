@@ -42,3 +42,24 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan",
     )
+
+    usecase_diagrams = relationship(
+        "UseCaseDiagram",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    class_diagrams = relationship(
+        "ClassDiagram",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    activity_diagrams = relationship(
+        "ActivityDiagram",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    sequence_diagrams = relationship(
+        "SequenceDiagram",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
