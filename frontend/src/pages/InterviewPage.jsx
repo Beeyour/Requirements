@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -28,12 +28,9 @@ export default function InterviewPage() {
   const [sendError, setSendError] = useState(null)
 
   // ================= NEW STATE FOR SRS MANAGEMENT =================
-  const [srsData, setSrsData] = useState(null) // Stores the complete SRS object {id, content, ...}
-  const [srsExists, setSrsExists] = useState(false) // Simple flag for UI rendering
-  const [loadingSrs, setLoadingSrs] = useState(true) // Initial page-load check
-
-  // New state to manage the view of the right functional pane ('buttons' or 'srsViewer')
-  const [rightPaneView, setRightPaneView] = useState('buttons')
+  const [srsData, setSrsData] = useState(null)
+  const [srsExists, setSrsExists] = useState(false)
+  const [loadingSrs, setLoadingSrs] = useState(true)
 
   // Existing artifact logic remains
   const [artifacts, setArtifacts] = useState({
@@ -71,24 +68,23 @@ export default function InterviewPage() {
 
   // ================= NEW EFFECT: CHECK FOR EXISTING SRS ON PAGE LOAD =================
   useEffect(() => {
+    // FIX #1: Immediately reset state when switching projects to avoid "leakage"
+    setSrsExists(false)
+    setSrsData(null)
+    setLoadingSrs(true)
+
     const checkSrsPresence = async () => {
       try {
-        setLoadingSrs(true)
-        // Hit the GET /requirements/{project_id} API
         const { data } = await apiClient.get(`/requirements/${projectId}`)
-        if (data) {
+        // Double check we actually got data back (not just an empty 200 OK)
+        if (data && Object.keys(data).length > 0) {
           setSrsData(data)
           setSrsExists(true)
         }
       } catch (err) {
-        if (err.response?.status === 404) {
-          // This is a normal state - it means no SRS exists yet.
-          setSrsExists(false)
-          setSrsData(null)
-        } else {
-          console.error("Error checking for SRS:", err);
-          // Optional: Display a small warning that we couldn't check.
-        }
+        // If 404, it means it doesn't exist yet, which is totally normal.
+        setSrsExists(false)
+        setSrsData(null)
       } finally {
         setLoadingSrs(false)
       }
@@ -102,61 +98,50 @@ export default function InterviewPage() {
 
   // ================= UPDATED API LOGIC FOR SRS HANDLERS =================
 
-  // 1. Initial Generation (Calls POST API)
+  // 1. Initial Generation (Calls POST API & Redirects)
   const handleInitialSrsGeneration = async () => {
     setGenerating(true)
     try {
-      // ✅ Hit the POST /requirements/generate-srs API exactly from your docs
       const { data } = await apiClient.post('/requirements/generate-srs', { project_id: projectId })
-
-      // On success, update states to show it exists and what it is.
       setSrsData(data)
       setSrsExists(true)
-
-      // Show confirmation
-      alert(t('srs_generated_success') || 'SRS Generated successfully.')
+      
+      // Navigate right to the viewer upon successful generation
+      navigate(`/project/${projectId}/srs`)
     } catch (err) {
       alert(err.response?.data?.detail || t('err_generate_srs'))
     } finally {
       setGenerating(false)
     }
   }
-  // 2. Document Update (Calls PUT API using projectId, then redirects)
+
+  // 2. Document Update (Calls PUT API & Redirects)
   const handleSrsUpdate = async () => {
     setGenerating(true)
     try {
-      // Hit the PUT API. 
-      // NOTE: If your backend requires an empty body, change this to: apiClient.put(`...`, {})
       await apiClient.put(`/requirements/update-requirement/${projectId}`, {
         project_id: projectId
       });
 
-      // Redirect to the View SRS page
+      // FIX #2: Navigate right to the viewer upon successful update
       navigate(`/project/${projectId}/srs`)
-
     } catch (err) {
       console.error("Full update error:", err.response?.data);
-
-      // Safely handle the error message so it doesn't say [object Object]
       let errorMsg = t('err_update_srs', 'Failed to update SRS.');
       const detail = err.response?.data?.detail;
 
       if (detail) {
-        // If the backend sent an object/array, turn it into readable text
         errorMsg = typeof detail === 'object' ? JSON.stringify(detail, null, 2) : detail;
       }
-
       alert(`Update Error:\n${errorMsg}`);
     } finally {
       setGenerating(false)
     }
   }
 
-  // 3. View SRS Document (Sets view state, no API call needed if data already fetched)
+  // 3. View SRS Document (Simple redirect)
   const handleViewSrs = () => {
     if (!srsExists) return;
-
-    // Redirect exactly like your original code did
     navigate(`/project/${projectId}/srs`);
   }
 
@@ -272,9 +257,8 @@ export default function InterviewPage() {
 
             </div>
           </div>
-
-          )
         </div>
+
       </div>
     </div>
   )
