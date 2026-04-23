@@ -30,7 +30,7 @@ def format_message(msg: ConversationHistory):
         "id": msg.id,
         "role": msg.role,
         "content": msg.content,
-        "timestamp": msg.timestamp.isoformat(),
+        "timestamp": msg.timestamp.isoformat() if msg.timestamp else None, 
     }
 
 async def start_new_interview(db: Session, project: Project):
