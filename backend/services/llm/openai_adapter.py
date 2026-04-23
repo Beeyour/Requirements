@@ -41,10 +41,11 @@ class OpenAIAdapter(BaseLLMAdapter):
 
                 response = await self.client.chat.completions.create(
                     model=model,
-                    messages=input_messages,          # <-- 1. تم تعديل input إلى messages
+                    messages=input_messages,
                     temperature=temperature,
-                    max_completion_tokens=max_tokens, # <-- 2. تم تعديل max_output_tokens 
-                    # response_format={"type": "json_object"} if is_json else None
+                    # قم بمسح السطر الخاص بـ max_completion_tokens 
+                    # واستبدله بهذا السطر:
+                    extra_body={"max_completion_tokens": max_tokens},
                 )
 
                 if hasattr(response, "output_text"):
