@@ -121,21 +121,28 @@ export default function InterviewPage() {
       setGenerating(false)
     }
   }
-
-  // 2. Document Update (Calls PUT API)
+  // 2. Document Update (Calls PUT API, then redirects)
   const handleSrsUpdate = async () => {
-    if (!srsData?.id) return;
+    // Safely grab the ID (checks for 'id' or 'requirement_id')
+    const requirementId = srsData?.id || srsData?.requirement_id;
+
+    // If we still can't find the ID, alert you instead of failing silently!
+    if (!requirementId) {
+      alert("Error: Cannot update because the requirement ID is missing.");
+      console.log("Current SRS Data object:", srsData);
+      return; 
+    }
+
     setGenerating(true)
     try {
-      // ✅ Hit the PUT /requirements/update-requirement/{requirement_id} API exactly from your docs
-      const { data } = await apiClient.put(`/requirements/update-requirement/${srsData.id}`)
+      // Step 1: Hit the PUT API to update the data
+      await apiClient.put(`/requirements/update-requirement/${requirementId}`)
       
-      // On success, update the local data with the new version.
-      setSrsData(data)
-      
-      alert(t('srs_updated_success') || 'SRS document updated successfully.')
+      // Step 2: Redirect to the View SRS page
+      navigate(`/project/${projectId}/srs`)
+
     } catch (err) {
-      alert(err.response?.data?.detail || t('err_update_srs') || 'Failed to update SRS.')
+      alert(err.response?.data?.detail || t('err_update_srs', 'Failed to update SRS.'))
     } finally {
       setGenerating(false)
     }
