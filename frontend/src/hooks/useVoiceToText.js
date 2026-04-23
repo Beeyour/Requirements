@@ -1,8 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
 
 export const useVoiceToText = (onTranscript) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  
+  // 2. Initialize translation hook to track the active language
+  const { i18n } = useTranslation(); 
 
   // 1. Keep track of the latest callback without triggering re-renders
   const onTranscriptRef = useRef(onTranscript);
@@ -29,7 +33,10 @@ export const useVoiceToText = (onTranscript) => {
 
     // 3. Create a fresh instance
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
+    
+    // 4. SET LANGUAGE DYNAMICALLY based on current UI language
+    recognition.lang = i18n.language.startsWith('ar') ? 'ar-SA' : 'en-US';
+    
     recognition.continuous = false; 
     recognition.interimResults = false;
 
@@ -68,8 +75,8 @@ export const useVoiceToText = (onTranscript) => {
       setIsListening(false);
     }
     
-  // Notice we removed onTranscript from the dependencies here
-  }, [isListening]); 
+  // 5. CRITICAL: Add i18n.language here so the function rebuilds if the user clicks the language toggle!
+  }, [isListening, i18n.language]); 
 
   return { isListening, toggleListening };
 };
