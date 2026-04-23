@@ -38,12 +38,13 @@ class OpenAIAdapter(BaseLLMAdapter):
         response_format = {"type": "json_object"} if is_json else None
 
         try:
-            # استخدام المسار الصحيح لمكتبة OpenAI الرسمية
+
             response = await self.client.chat.completions.create(
+
                 model=model,
                 messages=input_messages, # المسمى الصحيح هو messages وليس input
                 temperature=temperature,
-                max_completion_tokens=max_tokens,    # المسمى الصحيح هو max_tokens وليس max_output_tokens
+                max_tokens=max_tokens,    # المسمى الصحيح هو max_tokens وليس max_output_tokens
                 response_format=response_format
             )
 
