@@ -10,13 +10,6 @@ import { useModels } from '../hooks/useModels'
 import apiClient from '../api/client'
 import { useVoiceToText } from '../hooks/useVoiceToText'
 
-const PROVIDER_LABELS = { openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google' }
-const PROVIDER_COLORS = {
-  openai: 'bg-green-50 text-green-700 border-green-200',
-  anthropic: 'bg-orange-50 text-orange-700 border-orange-200',
-  google: 'bg-blue-50 text-blue-700 border-blue-200',
-}
-
 export default function InterviewPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -26,18 +19,35 @@ export default function InterviewPage() {
 
   const [project, setProject] = useState(null)
   const [input, setInput] = useState('')
-  const [generating, setGenerating] = useState(false)
-  const [showModelModal, setShowModelModal] = useState(false)
+  const [srsLoading, setSrsLoading] = useState(false)
   const [pendingModel, setPendingModel] = useState('')
   const [savingModel, setSavingModel] = useState(false)
   const [sendError, setSendError] = useState(null)
+  const [srsError, setSrsError] = useState(null)
+  const [umlError, setUmlError] = useState(null)
+  const [requirementsReady, setRequirementsReady] = useState(false)
+  const [activeDiagram, setActiveDiagram] = useState('')
+  const [sequenceOptions, setSequenceOptions] = useState([])
+  const [selectedUsecaseIdx, setSelectedUsecaseIdx] = useState(null)
+  const [diagramSvgs, setDiagramSvgs] = useState({
+    useCase: '',
+    class: '',
+    activity: '',
+    sequence: '',
+  })
+  const [umlLoading, setUmlLoading] = useState({
+    useCase: false,
+    class: false,
+    activity: false,
+    sequence: false,
+  })
 
-  // New state to manage the availability of diagrams
   const [artifacts, setArtifacts] = useState({
     srs: false,
     useCase: false,
     class: false,
-    activity: false
+    activity: false,
+    sequence: false,
   })
 
   const messagesEndRef = useRef(null)
@@ -47,13 +57,27 @@ export default function InterviewPage() {
   const { messages, loading, isSaturated, error, loadHistory, startInterview, sendMessage, resetConversation } =
     useChat(projectId)
 
+  const checkRequirementsExist = async () => {
+    const { data } = await apiClient.get(`/requirements/${projectId}`)
+    const exists = Array.isArray(data) && data.length > 0
+    setRequirementsReady(exists)
+    setArtifacts((prev) => ({ ...prev, srs: exists }))
+    return exists
+  }
+
   useEffect(() => {
-    apiClient.get(`/projects/${projectId}`).then(({ data }) => {
-      setProject(data)
-      setPendingModel(`${data.model_provider}:${data.model_name}`)
-      // If your API returns whether these exist, update the state here. 
-      // Example: setArtifacts({ srs: data.has_srs, useCase: data.has_usecase, ... })
-    })
+    apiClient
+      .get(`/projects/${projectId}`)
+      .then(async ({ data }) => {
+        setProject(data)
+        setPendingModel(`${data.model_provider}:${data.model_name}`)
+        try {
+          await checkRequirementsExist()
+        } catch {
+          setRequirementsReady(false)
+        }
+      })
+      .catch(() => {})
   }, [projectId])
 
   useEffect(() => {
@@ -92,37 +116,65 @@ export default function InterviewPage() {
     }
   };
 
-  // Button Click Handlers for State Logic
   const handleGenerateSRS = async () => {
-    setGenerating(true)
+    setSrsError(null)
+    setSrsLoading(true)
     try {
-      await apiClient.post('/requirements/generate-srs', { project_id: projectId })
-      
-      // Update local state to unlock dependent buttons
-      setArtifacts(prev => ({ ...prev, srs: true }))
-      
+      const hasRequirements = await checkRequirementsExist()
+      if (!hasRequirements) {
+        await apiClient.post('/requirements/generate-srs', { project_id: projectId })
+        setRequirementsReady(true)
+        setArtifacts((prev) => ({ ...prev, srs: true }))
+      }
       navigate(`/project/${projectId}/srs`)
     } catch (err) {
-      alert(err.response?.data?.detail || t('err_generate_srs'))
+      setSrsError(err.response?.data?.detail || t('err_generate_srs'))
     } finally {
-      setGenerating(false)
+      setSrsLoading(false)
     }
   }
 
-  // Placeholder functions to trigger the state changes for the other diagrams
-  const handleGenerateUseCase = () => {
-    setArtifacts(prev => ({ ...prev, useCase: true }))
-    // Add API call here
+  const handleOpenRequirementsUpdate = () => {
+    navigate(`/project/${projectId}/srs`)
   }
 
-  const handleGenerateClass = () => {
-    setArtifacts(prev => ({ ...prev, class: true }))
-    // Add API call here
+  const callDiagramApi = async (key, endpoint) => {
+    setUmlError(null)
+    setUmlLoading((prev) => ({ ...prev, [key]: true }))
+    try {
+      const { data } = await apiClient.get(endpoint)
+      const nextSvg = data?.svg_url || ''
+      setDiagramSvgs((prev) => ({ ...prev, [key]: nextSvg }))
+      setArtifacts((prev) => ({ ...prev, [key]: true }))
+      setActiveDiagram(key)
+      return data
+    } catch (err) {
+      setUmlError(err.response?.data?.detail || t('err_generate_uml'))
+      return null
+    } finally {
+      setUmlLoading((prev) => ({ ...prev, [key]: false }))
+    }
   }
 
-  const handleGenerateActivity = () => {
-    setArtifacts(prev => ({ ...prev, activity: true }))
-    // Add API call here
+  const handleGenerateUseCase = async () => {
+    const data = await callDiagramApi('useCase', `/generate-usecase/${projectId}`)
+    if (!data?.data?.use_cases) return
+    const options = data.data.use_cases.map((name, idx) => ({ idx, name }))
+    setSequenceOptions(options)
+    if (options.length > 0) setSelectedUsecaseIdx(options[0].idx)
+  }
+
+  const handleGenerateClass = async () => {
+    await callDiagramApi('class', `/generate-class/${projectId}`)
+  }
+
+  const handleGenerateActivity = async () => {
+    await callDiagramApi('activity', `/generate-activity/${projectId}`)
+  }
+
+  const handleGenerateSequence = async () => {
+    if (selectedUsecaseIdx === null || selectedUsecaseIdx === undefined) return
+    await callDiagramApi('sequence', `/generate-sequence/${projectId}/${selectedUsecaseIdx}`)
   }
 
   const handleReset = async () => {
@@ -152,6 +204,13 @@ export default function InterviewPage() {
   const currentModelName = project && models
     ? models[project.model_provider]?.[project.model_name] || project.model_name
     : ''
+
+  const studioReady = isSaturated
+  const canGenerateBaseDiagrams = studioReady && requirementsReady
+  const canGenerateDependentDiagrams = canGenerateBaseDiagrams && artifacts.useCase && artifacts.class
+  const buttonBaseClass =
+    'flex flex-col items-start justify-between p-3.5 h-[90px] rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent'
+  const activeSvgUrl = activeDiagram ? diagramSvgs[activeDiagram] : ''
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
@@ -286,7 +345,7 @@ export default function InterviewPage() {
             
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
-              {true && (
+              {studioReady && (
                 <span className="flex h-2.5 w-2.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
@@ -294,71 +353,140 @@ export default function InterviewPage() {
               )}
             </div>
 
-            {true && (
+            {studioReady ? (
               <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-2xl text-xs text-green-800 flex items-start gap-2 shadow-sm">
                  <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
                 <span className="leading-relaxed"><strong>{t('info_complete')}</strong> {t('ready_generate')}</span>
               </div>
+            ) : (
+              <div className="mb-5 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
+                Continue the interview until saturation to unlock SRS and diagrams.
+              </div>
             )}
 
-            {/* NotebookLM Style Buttons Grid (2 columns) */}
-            <div className="grid grid-cols-2 gap-3">
-              
-              {/* 1. SRS Button */}
+            {srsError && (
+              <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{srsError}</div>
+            )}
+            {umlError && (
+              <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{umlError}</div>
+            )}
+
+            <div className="mb-3 flex gap-2">
               <button
                 onClick={handleGenerateSRS}
-                disabled={generating}
-                className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-blue-50/60 hover:bg-blue-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-blue-200"
+                disabled={srsLoading || !studioReady}
+                title={!studioReady ? 'Interview must be saturated first.' : ''}
+                className="flex-1 h-10 px-3 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {srsLoading ? 'Generating...' : 'Generate SRS'}
+              </button>
+              <button
+                onClick={handleOpenRequirementsUpdate}
+                disabled={!studioReady}
+                title={!studioReady ? 'Interview must be saturated first.' : ''}
+                className="flex-1 h-10 px-3 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Update Requirements
+              </button>
+            </div>
+
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Diagrams</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleGenerateUseCase}
+                disabled={!canGenerateBaseDiagrams || umlLoading.useCase}
+                title={!canGenerateBaseDiagrams ? 'Generate/confirm SRS and complete interview first.' : ''}
+                className={`${buttonBaseClass} bg-purple-50/60 hover:bg-purple-100/80 hover:border-purple-200`}
               >
                 <div className="text-blue-600">
-                  {generating ? (
+                  {umlLoading.useCase ? (
                     <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                   )}
-                </div>
-                <span className="font-medium text-slate-700 text-xs leading-tight">SRS<br/>Requirement</span>
-              </button>
-
-              {/* 2. Use Case Diagram */}
-              <button 
-                onClick={handleGenerateUseCase}
-                disabled={!artifacts.srs}
-                className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-purple-50/60 hover:bg-purple-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-purple-200"
-              >
-                <div className="text-purple-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Use Case<br/>Diagram</span>
               </button>
 
-              {/* 3. Class Diagram */}
               <button 
                 onClick={handleGenerateClass}
-                disabled={!artifacts.srs}
-                className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-yellow-50/80 hover:bg-yellow-100 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-yellow-200"
+                disabled={!canGenerateBaseDiagrams || umlLoading.class}
+                title={!canGenerateBaseDiagrams ? 'Generate/confirm SRS and complete interview first.' : ''}
+                className={`${buttonBaseClass} bg-yellow-50/80 hover:bg-yellow-100 hover:border-yellow-200`}
               >
                 <div className="text-yellow-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                  {umlLoading.class ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                  )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Class<br/>Diagram</span>
               </button>
 
-              {/* 4. Activity Diagram */}
               <button 
                 onClick={handleGenerateActivity}
-                disabled={!artifacts.useCase || !artifacts.class}
-                className="flex flex-col items-start justify-between p-3.5 h-[90px] bg-emerald-50/60 hover:bg-emerald-100/80 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent hover:border-emerald-200"
+                disabled={!canGenerateDependentDiagrams || umlLoading.activity}
+                title={!canGenerateDependentDiagrams ? 'Generate Use Case and Class first.' : ''}
+                className={`${buttonBaseClass} bg-emerald-50/60 hover:bg-emerald-100/80 hover:border-emerald-200`}
               >
                 <div className="text-emerald-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
+                  {umlLoading.activity ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
+                  )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Activity<br/>Diagram</span>
               </button>
 
+              <button 
+                onClick={handleGenerateSequence}
+                disabled={!canGenerateDependentDiagrams || umlLoading.sequence || selectedUsecaseIdx === null}
+                title={!canGenerateDependentDiagrams ? 'Generate Use Case and Class first.' : ''}
+                className={`${buttonBaseClass} bg-indigo-50/70 hover:bg-indigo-100/80 hover:border-indigo-200`}
+              >
+                <div className="text-indigo-600">
+                  {umlLoading.sequence ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h18M3 12h18M3 19h18" /></svg>
+                  )}
+                </div>
+                <span className="font-medium text-slate-700 text-xs leading-tight">Sequence<br/>Diagram</span>
+              </button>
             </div>
+
+            <div className="mt-4">
+              <label className="block text-xs text-slate-600 mb-1">Sequence Use Case</label>
+              <select
+                value={selectedUsecaseIdx ?? ''}
+                onChange={(e) => setSelectedUsecaseIdx(e.target.value === '' ? null : Number(e.target.value))}
+                disabled={sequenceOptions.length === 0}
+                className="w-full h-9 px-2 rounded-lg border border-slate-200 text-xs bg-white disabled:bg-slate-50"
+              >
+                {sequenceOptions.length === 0 ? (
+                  <option value="">Generate Use Case first</option>
+                ) : (
+                  sequenceOptions.map((option) => (
+                    <option key={option.idx} value={option.idx}>
+                      {option.idx}: {option.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {activeSvgUrl && (
+              <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                <div className="px-3 py-2 text-xs font-medium text-slate-700 border-b border-slate-200 capitalize">
+                  {activeDiagram} diagram
+                </div>
+                <img src={activeSvgUrl} alt={`${activeDiagram} diagram`} className="w-full h-auto bg-white" />
+              </div>
+            )}
           </div>
         </div>
       </div>

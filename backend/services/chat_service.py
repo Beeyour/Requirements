@@ -65,20 +65,21 @@ async def process_chat_message(db: Session, project: Project, content: str):
     all_msgs = get_active_history(db, project.id)
     context = [{"role": m.role, "content": m.content} for m in all_msgs]
     
-    # 3. Get AI response and check saturation (Using await)
-    # Context is limited to last 10 messages for efficiency
+    # 3. Get AI JSON-structured response (using recent context for efficiency)
     ai_resp = await get_interview_response(
         context[-10:], 
         project.app_name, 
         project.model_provider, 
         project.model_name
     )
-    
-    saturation = await check_saturation(
-        context, 
-        project.model_provider, 
-        project.model_name
-    )
+    saturation_flag = bool(ai_resp.get("is_saturated", False))
+    if not saturation_flag:
+        saturation = await check_saturation(
+            context,
+            project.model_provider,
+            project.model_name
+        )
+        saturation_flag = bool(saturation.get("is_saturated", False))
 
     # 4. Save AI response (Sync DB)
     assistant_msg = ConversationHistory(
@@ -91,7 +92,7 @@ async def process_chat_message(db: Session, project: Project, content: str):
     # Return structure remains identical for frontend compatibility
     return {
         "message": ai_resp["message"],
-        "is_saturated": saturation.get("is_saturated", False),
+        "is_saturated": saturation_flag,
         "message_id": assistant_msg.id,
         "history": [format_message(m) for m in get_active_history(db, project.id)]
     }
