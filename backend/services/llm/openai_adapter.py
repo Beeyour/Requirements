@@ -44,7 +44,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                     input=input_messages,
                     temperature=temperature,
                     max_output_tokens=max_tokens,
-                    response_format={"type": "json_object"} if is_json else None
+                    # response_format={"type": "json_object"} if is_json else None
 
                 )
 
@@ -65,7 +65,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                     messages=input_messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
-                    response_format={"type": "json_object"} if is_json else None
+                    # response_format={"type": "json_object"} if is_json else None
                 )
 
                 return response.choices[0].message.content
