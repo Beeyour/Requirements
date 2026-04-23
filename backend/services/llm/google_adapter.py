@@ -13,7 +13,7 @@ class GoogleAdapter(BaseLLMAdapter):
         genai.configure(api_key=self.api_key)
 
     async def call(self, model: str, system_prompt: str, messages: List[Dict[str, str]], 
-            temperature: float, max_tokens: int) -> str:
+            temperature: float, max_tokens: int, is_json: bool) -> str:
         
         # Initialize the generative model with system instructions
         gen_model = genai.GenerativeModel(
