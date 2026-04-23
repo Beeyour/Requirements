@@ -1,8 +1,11 @@
 from typing import List
 from backend.enums import ReqType
 from backend.services.uml.prompts import _UML_GENERATOR_SYSTEM
+from backend.services.uml.utils import validate_and_parse_json, build_usecase_plantuml
 from backend.services.llm import call_llm
 from backend.models import Requirement
+from backend.schemas.uml.usecase import UseCaseJSON
+
 
 def format_requirements_for_ai(requirements: List[Requirement]) -> str:
     formatted_lines = ["### Project Functional Requirements List:"]
@@ -17,13 +20,13 @@ def format_requirements_for_ai(requirements: List[Requirement]) -> str:
     return "\n".join(formatted_lines)
 
 
-
-async def generate_usecase_json(formatted_requirements: str, provider: str , model: str) -> str:
+async def generate_usecase_json(formatted_requirements: str, provider: str, model: str) -> dict:
+    """Call LLM and return validated UseCaseJSON dict."""
     if not formatted_requirements:
         raise ValueError("No requirements provided to generate UML.")
 
     user_content = f"Generate a Use Case diagram for these requirements:\n{formatted_requirements}"
-    plantuml_json = await call_llm(
+    raw = await call_llm(
         provider, model,
         _UML_GENERATOR_SYSTEM,
         messages=[{"role": "user", "content": user_content}],
@@ -31,35 +34,12 @@ async def generate_usecase_json(formatted_requirements: str, provider: str , mod
         max_tokens=1000,
         is_json=True
     )
-    print(plantuml_json)
-    return plantuml_json.strip()
+    return validate_and_parse_json(raw.strip(), UseCaseJSON)
 
 
-
-
-def generate_plantuml(data):
-    lines = [
-        "@startuml",
-        "left to right direction",
-        "skinparam packageStyle rectangle",
-        "skinparam shadowing false",
-        "skinparam monochrome true",
-        ""
-    ]
-    for i, actor_name in enumerate(data.get("actors", [])):
-        lines.append(f'actor "{actor_name}" as A{i}')
-    lines.append(f'\nrectangle "{data.get("system_title", "System")}" {{')
-    for i, uc in enumerate(data.get("use_cases", [])):
-        lines.append(f'    usecase "{uc}" as UC{i}')
-    for base, inc in data.get("includes", []):
-        lines.append(f"    UC{base} ..> UC{inc} : <<include>>")
-    for ext, base in data.get("extends", []):
-        lines.append(f"    UC{ext} ..> UC{base} : <<extend>>")
-    lines.append("}\n")
-    for a_idx, uc_idx in data.get("links", []):
-        lines.append(f"A{a_idx} --> UC{uc_idx}")
-    lines.append("\n@enduml")
-    return "\n".join(lines)
+def generate_plantuml(data: dict, project_id: int) -> str:
+    """Build PlantUML string from validated use case data with interactive hyperlinks."""
+    return build_usecase_plantuml(data, project_id)
 
 
 
