@@ -48,16 +48,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                     extra_body={"max_completion_tokens": max_tokens},
                 )
 
-                if hasattr(response, "output_text"):
-                    return response.output_text
-
-                texts = []
-                for item in response.output:
-                    for content in getattr(item, "content", []):
-                        if hasattr(content, "text"):
-                            texts.append(content.text)
-
-                return "".join(texts)
+                return response.choices[0].message.content
             else:
 
                 response = await self.client.chat.completions.create(
