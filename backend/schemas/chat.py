@@ -10,8 +10,7 @@ class MessageResponse(BaseModel):
     id: int
     role: str
     content: str
-    timestamp: datetime
-
+    timestamp: Optional[datetime] = None
     # Enables compatibility with SQLAlchemy ORM models
     model_config = ConfigDict(from_attributes=True)
 
