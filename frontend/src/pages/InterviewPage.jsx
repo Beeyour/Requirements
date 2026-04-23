@@ -286,7 +286,7 @@ export default function InterviewPage() {
             
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
-              {isSaturated && (
+              {true && (
                 <span className="flex h-2.5 w-2.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
@@ -294,7 +294,7 @@ export default function InterviewPage() {
               )}
             </div>
 
-            {isSaturated && (
+            {true && (
               <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-2xl text-xs text-green-800 flex items-start gap-2 shadow-sm">
                  <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
