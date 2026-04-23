@@ -23,9 +23,9 @@ def test_usecase():
     puml = build_usecase_plantuml(data, 1)
     print("=== USE CASE ===")
     print(puml)
-    assert "[[/uml/generate_sequence/1/0]]" in puml
-    assert "A0 --> UC0" in puml
-    assert "UC1 ..> UC0 : <<include>>" in puml
+    assert "[[/generate-sequence/1/0]]" in puml
+    assert "A0 --> UC_0" in puml
+    assert "UC_1 ..> UC_0 : <<include>>" in puml
     print("Use Case: PASS\n")
 
 
@@ -79,7 +79,11 @@ def test_activity():
     puml = build_activity_plantuml(data)
     print("=== ACTIVITY ===")
     print(puml)
-    assert "if (Is Valid?) then" in puml
+    # Conditions must be on same line as if/else
+    assert "if (Is Valid?) then (Yes)" in puml
+    assert "else (No)" in puml
+    assert "stop" in puml
+    assert "|Swimlane|" not in puml  # No dummy swimlane
     assert "Register Patient" in puml
     print("Activity: PASS\n")
 
@@ -112,7 +116,7 @@ def test_sequence():
     assert "P0 -> P1 : enterDetails()" in puml
     assert "P2 --> P0 : confirmation" in puml
     assert "alt if valid" in puml
-    assert "[[/uml/generate-usecase/1]]" in puml
+    assert "[[/generate-usecase/1]]" in puml
     print("Sequence: PASS\n")
 
 
@@ -128,7 +132,7 @@ def test_bounds_checking():
     }
     puml = build_usecase_plantuml(uc_data, 1)
     assert "A5" not in puml
-    assert "UC99" not in puml
+    assert "UC_99" not in puml
     print("Bounds checking: PASS\n")
 
     cls_data = {

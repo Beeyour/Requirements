@@ -74,15 +74,20 @@ _CLASS_DIAGRAM_SYSTEM = """You are an Expert Software Architect. Your task is to
 
 _ACTIVITY_DIAGRAM_SYSTEM = """You are an Expert Business Analyst and System Architect. Your task is to analyze a business process and extract an Activity Diagram into a strict, validated JSON format using index-based references.
 
-CRITICAL RULES:
+### SINGLE SOURCE OF TRUTH (SSoT) RULES:
+- **STRICT VOCABULARY**: You MUST strictly use the exact Actors and Class names provided in the Use Case and Class Diagram context. Do NOT invent, assume, or hallucinate any new entities.
+- **SWIMLANES**: MUST perfectly match the Class names or Actors from the SSoT context.
+- **ACTION LABELS**: MUST reuse Use Case names from the SSoT context where they match the step being described.
+
+### EXTRACTION RULES:
 1. SWIMLANES (Partitions): Identify who or what is performing the action. You MUST reuse actor names from the Use Case diagram and class names from the Class diagram where applicable. All actions must belong to a swimlane.
 2. NODES: Extract the steps as specific node types:
    - 'start': The single starting point (exactly one).
-   - 'action': A task or step (keep the label concise, verb + noun). Action labels SHOULD reuse Use Case names from the Use Case diagram where they match.
+   - 'action': A task or step (keep the label concise, verb + noun). Action labels MUST reuse Use Case names from the Use Case diagram where they match.
    - 'decision': A branching point (usually a question, e.g., 'Is Valid?').
    - 'fork': A point where the flow splits into parallel (concurrent) paths.
    - 'join': A point where parallel paths merge back together.
-   - 'end': The finishing point(s) of the process.
+   - 'end': The finishing point(s) of the process. Terminate the flow in the exact swimlane where the last action occurred — do NOT transition to another swimlane just to end.
 3. TRANSITIONS: Use zero-based 'from_idx' and 'to_idx' referencing the index of the node in the 'nodes' array. If the source is a 'decision' node, you MUST include a 'condition' (e.g., 'Yes', 'No', 'Invalid').
 4. NODE IDs: Each node must have a short unique 'id' (e.g., 'n0', 'n1', 'n2').
 5. Output ONLY valid JSON.
@@ -92,8 +97,8 @@ EXPECTED JSON SCHEMA:
 {
   "title": "[Process Name, e.g., 'Checkout Process']",
   "swimlanes": [
-    "[Actor/Class Name 1]",
-    "[Actor/Class Name 2]"
+    "[Actor/Class Name from SSoT]",
+    "[Actor/Class Name from SSoT]"
   ],
   "nodes": [
     {
@@ -116,11 +121,16 @@ EXPECTED JSON SCHEMA:
 
 _SEQUENCE_DIAGRAM_SYSTEM = """You are an Expert Software Architect. Your task is to analyze a specific Use Case scenario and extract a precise Sequence Diagram into a strict JSON format using index-based references.
 
-CRITICAL RULES:
-1. PARTICIPANTS: Identify all entities involved. The first participant MUST be the external Actor from the specified Use Case. Other participants should be Classes from the Class Diagram. Each participant has a type: "actor" (external human), "participant" (system component), "database" (data store), or "boundary" (UI/API edge).
+### SINGLE SOURCE OF TRUTH (SSoT) RULES:
+- **STRICT VOCABULARY**: You MUST strictly use the exact Classes, Actors, and Methods provided in the Class Diagram and Use Case Diagram context. Do NOT invent, assume, or hallucinate any new classes, methods, or actions.
+- **PARTICIPANTS**: MUST be the exact Classes and Actors from the SSoT context. Do NOT create participants that do not exist in the provided Class/Use Case data.
+- **MESSAGES**: MUST be the exact Methods belonging to those Classes as defined in the SSoT context. Do NOT invent methods that are not listed in the Class Diagram.
+
+### EXTRACTION RULES:
+1. PARTICIPANTS: Identify all entities involved. The first participant MUST be the external Actor from the specified Use Case. Other participants MUST be Classes from the Class Diagram. Each participant has a type: "actor" (external human), "participant" (system component), "database" (data store), or "boundary" (UI/API edge).
 2. MESSAGES: Extract the exact chronological sequence of interactions using 'from_idx' and 'to_idx' referencing the zero-based index in the 'participants' array.
-   - Identify requests (e.g., 'validate()', 'save()').
-   - Identify return messages/responses (e.g., 'token', 'success message') by setting 'is_return' to true.
+   - Request messages MUST use method names from the Class Diagram (e.g., 'validate()', 'save()').
+   - Return messages/responses (e.g., 'token', 'success') by setting 'is_return' to true.
 3. FRAGMENTS (Logic): If the flow contains conditional logic (If/Else) or loops, use a fragment block with 'fragment_type': "alt" for if/else, "opt" for optional, "loop" for iterations. Fragments contain nested 'steps' which are messages or other fragments.
 4. Output ONLY valid JSON. Use extremely concise method-like naming for messages.
 5. LANGUAGE: Output MUST be in English regardless of input language.
@@ -130,7 +140,7 @@ EXPECTED JSON SCHEMA:
   "title": "[Scenario Title, e.g., 'User Login Process']",
   "participants": [
     {
-      "name": "[Participant Name, e.g., 'Client']",
+      "name": "[Exact Class/Actor Name from SSoT]",
       "type": "actor | participant | database | boundary"
     }
   ],
@@ -140,7 +150,7 @@ EXPECTED JSON SCHEMA:
       "from_idx": 0,
       "to_idx": 1,
       "is_return": false,
-      "text": "[Short action text, e.g., 'submitCredentials()']"
+      "text": "[Exact method name from SSoT, e.g., 'validate()']"
     },
     {
       "type": "fragment",
@@ -152,7 +162,7 @@ EXPECTED JSON SCHEMA:
           "from_idx": 1,
           "to_idx": 2,
           "is_return": false,
-          "text": "[action text]"
+          "text": "[Exact method name from SSoT]"
         }
       ]
     }

@@ -58,22 +58,22 @@ def build_usecase_plantuml(data: dict, project_id: int) -> str:
     lines.append(f'\nrectangle "{system_title}" {{')
 
     for i, name in enumerate(use_cases):
-        link = f"/uml/generate_sequence/{project_id}/{i}"
-        lines.append(f'    usecase "{name}" as UC{i} [[{link}]]')
+        link = f"/generate-sequence/{project_id}/{i}"
+        lines.append(f'    usecase "{name}" as UC_{i} [[{link}]]')
 
     # includes
     for rel in data.get("includes", []):
         base = rel.get("base_idx") if isinstance(rel, dict) else rel[0]
         inc = rel.get("included_idx") if isinstance(rel, dict) else rel[1]
         if 0 <= base < len(use_cases) and 0 <= inc < len(use_cases):
-            lines.append(f"    UC{base} ..> UC{inc} : <<include>>")
+            lines.append(f"    UC_{base} ..> UC_{inc} : <<include>>")
 
     # extends
     for rel in data.get("extends", []):
         ext = rel.get("extending_idx") if isinstance(rel, dict) else rel[0]
         base = rel.get("base_idx") if isinstance(rel, dict) else rel[1]
         if 0 <= ext < len(use_cases) and 0 <= base < len(use_cases):
-            lines.append(f"    UC{ext} ..> UC{base} : <<extend>>")
+            lines.append(f"    UC_{ext} ..> UC_{base} : <<extend>>")
 
     lines.append("}\n")
 
@@ -82,7 +82,7 @@ def build_usecase_plantuml(data: dict, project_id: int) -> str:
         a_idx = rel.get("actor_idx") if isinstance(rel, dict) else rel[0]
         uc_idx = rel.get("usecase_idx") if isinstance(rel, dict) else rel[1]
         if 0 <= a_idx < len(actors) and 0 <= uc_idx < len(use_cases):
-            lines.append(f"A{a_idx} --> UC{uc_idx}")
+            lines.append(f"A{a_idx} --> UC_{uc_idx}")
 
     lines.append("\n@enduml")
     return "\n".join(lines)
@@ -139,7 +139,14 @@ def build_class_plantuml(data: dict) -> str:
 
 
 def build_activity_plantuml(data: dict) -> str:
-    """Build an Activity Diagram PlantUML string with swimlanes using graph traversal."""
+    """Build an Activity Diagram PlantUML string with swimlanes using graph traversal.
+
+    PlantUML syntax rules enforced:
+    - Condition labels on the SAME line as if/else (e.g. ``if (X?) then (Yes)``)
+    - Use ``stop`` for termination, NEVER ``end``
+    - Declare all swimlanes at top (no dummy |Swimlane|)
+    - Stop in the current swimlane, do not switch just to terminate
+    """
     swimlanes = data.get("swimlanes", [])
     nodes = data.get("nodes", [])
     transitions = data.get("transitions", [])
@@ -179,29 +186,29 @@ def build_activity_plantuml(data: dict) -> str:
         if n_type == "start":
             out.append("start")
         elif n_type == "end":
-            out.append("end")
+            # Use 'stop' — NEVER 'end' (avoids collision with PlantUML keywords)
+            out.append("stop")
             return
         elif n_type == "action":
             out.append(f":{label};")
         elif n_type == "decision":
             branches = adj.get(idx, [])
             if len(branches) >= 2:
-                # First branch = "then" (condition from transition)
-                out.append(f"if ({label}) then")
+                # Condition label on SAME line as if/else per PlantUML syntax
                 to0, cond0 = branches[0]
-                if cond0:
-                    out.append(f"  ({cond0})")
+                cond_part0 = f" ({cond0})" if cond0 else ""
+                out.append(f"if ({label}) then{cond_part0}")
                 _walk(to0, out)
 
-                out.append("else")
                 to1, cond1 = branches[1]
-                if cond1:
-                    out.append(f"  ({cond1})")
+                cond_part1 = f" ({cond1})" if cond1 else ""
+                out.append(f"else{cond_part1}")
                 _walk(to1, out)
 
                 # Additional branches become "elseif"
                 for to_n, cond_n in branches[2:]:
-                    out.append(f"elseif ({cond_n}) then")
+                    cond_part_n = f" ({cond_n})" if cond_n else ""
+                    out.append(f"elseif{cond_part_n} then")
                     _walk(to_n, out)
 
                 out.append("endif")
@@ -246,8 +253,9 @@ def build_activity_plantuml(data: dict) -> str:
         "",
     ]
 
+    # Declare all swimlanes at the top (left-to-right ordering enforced)
+    # NO dummy |Swimlane| line
     if swimlanes:
-        lines.append("|Swimlane|")
         for sl in swimlanes:
             lines.append(f"|{sl}|")
 
@@ -327,7 +335,7 @@ def build_sequence_plantuml(data: dict, project_id: int, usecase_idx: int) -> st
     lines.extend(_render_sequence_steps(sequence, len(participants)))
 
     # Return link note
-    back_link = f"/uml/generate-usecase/{project_id}"
+    back_link = f"/generate-usecase/{project_id}"
     lines.append("")
     lines.append(f'hnote over P0 [[{back_link}]] : << Back to Use Case Diagram')
 
