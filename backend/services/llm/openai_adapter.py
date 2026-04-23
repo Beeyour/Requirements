@@ -36,10 +36,10 @@ class OpenAIAdapter(BaseLLMAdapter):
         input_messages.extend(messages)
 
         try:
-            response_format = {"type": "json_object"} if is_json else None
+
             if self._is_new_model(model):
 
-                response = await self.client.responses.create(
+                response = await self.client.chat.completions.create(
                     model=model,
                     input=input_messages,
                     temperature=temperature,
