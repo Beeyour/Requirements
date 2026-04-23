@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
+const hasStarted = useRef(false); // Ref to track if startInterview has been called
 import Navbar from '../components/Navbar'
 import ChatMessage from '../components/ChatMessage'
 import ModelSelector from '../components/ModelSelector'
@@ -113,9 +113,16 @@ export default function InterviewPage() {
     loadHistory().then(() => { })
   }, [])
 
-  useEffect(() => {
-    if (messages.length === 0 && !loading) startInterview()
-  }, [messages, loading])
+// Optimized useEffect to start the interview only once
+    useEffect(() => {
+    const isHistoryEmpty = messages.length === 0;
+    
+    // Only start if history is empty, not currently loading, and hasn't started yet
+    if (isHistoryEmpty && !loading && !hasStarted.current) {
+        hasStarted.current = true; // Lock the gate immediately
+        startInterview();
+    }
+    }, [messages, loading]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
