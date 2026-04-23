@@ -10,6 +10,10 @@ from backend.models.project import Project
 from backend.models.conversation import ConversationHistory
 from backend.models.requirement import Requirement
 from backend.models.requirement_log import RequirementLog
+from backend.models.uml.usecase_diagram import UseCaseDiagram
+from backend.models.uml.class_diagram import ClassDiagram
+from backend.models.uml.activity_diagram import ActivityDiagram
+from backend.models.uml.sequence_diagram import SequenceDiagram
 
 app = FastAPI(
     title="SRS Analyst API",
