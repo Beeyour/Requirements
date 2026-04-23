@@ -121,18 +121,30 @@ export default function InterviewPage() {
       setGenerating(false)
     }
   }
-  // 2. Document Update (Calls PUT API, then redirects)
+  // 2. Document Update (Calls PUT API using projectId, then redirects)
   const handleSrsUpdate = async () => {
     setGenerating(true)
     try {
-      // Step 1: Hit the PUT API using the projectId directly!
+      // Hit the PUT API. 
+      // NOTE: If your backend requires an empty body, change this to: apiClient.put(`...`, {})
       await apiClient.put(`/requirements/update-requirement/${projectId}`)
       
-      // Step 2: Redirect to the View SRS page
+      // Redirect to the View SRS page
       navigate(`/project/${projectId}/srs`)
 
     } catch (err) {
-      alert(err.response?.data?.detail || t('err_update_srs', 'Failed to update SRS.'))
+      console.error("Full update error:", err.response?.data);
+      
+      // Safely handle the error message so it doesn't say [object Object]
+      let errorMsg = t('err_update_srs', 'Failed to update SRS.');
+      const detail = err.response?.data?.detail;
+      
+      if (detail) {
+        // If the backend sent an object/array, turn it into readable text
+        errorMsg = typeof detail === 'object' ? JSON.stringify(detail, null, 2) : detail;
+      }
+      
+      alert(`Update Error:\n${errorMsg}`);
     } finally {
       setGenerating(false)
     }
