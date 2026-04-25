@@ -132,8 +132,9 @@ export default function InterviewPage() {
   }, [projectId])
 
   // --- التأثير 3: تهيئة المحادثة ---
+// --- التأثير 3: تهيئة المحادثة ---
   useEffect(() => {
-    // إذا كان هذا المشروع قيد التهيئة بالفعل، لا تكرر
+    // منع التكرار، لكن مع السماح لـ React Strict Mode بالعمل بشكل صحيح
     if (currentLoadingId.current === projectId) return;
     currentLoadingId.current = projectId;
 
@@ -143,10 +144,12 @@ export default function InterviewPage() {
       try {
         const history = await loadHistory();
         
+        // إذا تم تدمير المكون (كما يحدث في Strict Mode)، أوقف العملية القديمة
         if (!isMounted) return; 
 
         const hasHistory = Array.isArray(history) && history.length > 0;
         
+        // إذا لم يكن هناك تاريخ (مشروع جديد)، اطلب البداية
         if (!hasHistory) {
           await startInterview();
         }
@@ -162,6 +165,8 @@ export default function InterviewPage() {
 
     return () => {
       isMounted = false;
+      // السطر السحري لحل مشكلة Strict Mode: فك القفل عند خروج المستخدم أو تدمير المكون
+      currentLoadingId.current = null; 
     };
   }, [projectId]);
 
