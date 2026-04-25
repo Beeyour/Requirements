@@ -15,7 +15,13 @@ def parse_json_response(raw_text: str) -> Dict[str, Any]:
             return json.loads(json_match.group())
         return json.loads(raw_text)
     except (json.JSONDecodeError, AttributeError):
-        return {"is_saturated": False, "coverage_percentage": 0, "missing_areas": []}
+        return {
+            "acknowledgment": "",
+            "question": "",
+            "is_saturated": False,
+            "coverage_percentage": 0,
+            "missing_areas": [],
+        }
 
 async def get_initial_greeting(app_name: str, provider: str, model: str) -> str:
     # Triggers the first question of the interview
@@ -26,8 +32,12 @@ async def get_initial_greeting(app_name: str, provider: str, model: str) -> str:
         temperature=0.7,
         max_tokens=400,
     )
-    # Clean output from potential hidden saturation tags
-    return raw.replace("SATURATION_DETECTED", "").strip()
+    parsed = parse_json_response(raw)
+    ack = (parsed.get("acknowledgment") or "").strip()
+    question = (parsed.get("question") or "").strip()
+    if ack and question:
+        return f"{ack}\n\n{question}"
+    return ack or question or "Let's start. What is the core purpose of your application?"
 
 async def get_interview_response(
     conversation_history: List[Dict[str, str]],
@@ -35,7 +45,7 @@ async def get_interview_response(
     provider: str,
     model: str,
 ) -> Dict[str, Any]:
-    # Gets the next analyst question and checks for the saturation token
+    # Gets the next analyst turn and parses strict JSON output
     raw = await call_llm(
         provider, model,
         _INTERVIEW_SYSTEM,
@@ -43,10 +53,17 @@ async def get_interview_response(
         temperature=0.7,
         max_tokens=500,
     )
-    # The saturation token might be present in the text if specified in prompts.py
-    is_saturated = "SATURATION_DETECTED" in raw
+    parsed = parse_json_response(raw)
+    ack = (parsed.get("acknowledgment") or "").strip()
+    question = (parsed.get("question") or "").strip()
+    if ack and question:
+        message = f"{ack}\n\n{question}"
+    else:
+        message = ack or question
+
+    is_saturated = bool(parsed.get("is_saturated", False))
     return {
-        "message": raw.replace("SATURATION_DETECTED", "").strip(), 
+        "message": message,
         "is_saturated": is_saturated
     }
 
