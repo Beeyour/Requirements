@@ -31,10 +31,13 @@ class GoogleAdapter(BaseLLMAdapter):
         chat = gen_model.start_chat(history=history)
 
         # Configure generation parameters
-        config = genai.types.GenerationConfig(
-            max_output_tokens=max_tokens,
-            temperature=temperature,
-        )
+        config_kwargs = {
+            "max_output_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if is_json:
+            config_kwargs["response_mime_type"] = "application/json"
+        config = genai.types.GenerationConfig(**config_kwargs)
 
         # Change: Use 'send_message_async' and 'await' to match the layer requirements
         response = await chat.send_message_async(
