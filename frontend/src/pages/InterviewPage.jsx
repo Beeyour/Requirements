@@ -17,7 +17,6 @@ export default function InterviewPage() {
 
   const { t } = useTranslation()
 
-  // --- States ---
   const [project, setProject] = useState(null)
   const [input, setInput] = useState('')
   const [srsLoading, setSrsLoading] = useState(false)
@@ -30,7 +29,7 @@ export default function InterviewPage() {
   const [activeDiagram, setActiveDiagram] = useState('')
   const [sequenceOptions, setSequenceOptions] = useState([])
   const [selectedUsecaseIdx, setSelectedUsecaseIdx] = useState(null)
-  const [forceRefresh, setForceRefresh] = useState(0) // تم نقله للداخل
+  const [forceRefresh, setForceRefresh] = useState(0)
 
   const [diagramSvgs, setDiagramSvgs] = useState({
     useCase: '',
@@ -61,33 +60,20 @@ export default function InterviewPage() {
     sequence: false,
   })
 
-  // --- Refs ---
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  const initializationLock = useRef(null) // قفل لمنع تكرار الطلبات
+  const currentLoadingId = useRef(null) // قفل التهيئة يعتمد على الـ ID
 
-  // --- Custom Hooks ---
   const { models } = useModels()
-  const { 
-    messages, 
-    loading, 
-    isSaturated, 
-    error, 
-    loadHistory, 
-    startInterview, 
-    sendMessage, 
-    resetConversation 
-  } = useChat(projectId)
+  const { messages, loading, isSaturated, error, loadHistory, startInterview, sendMessage, resetConversation } =
+    useChat(projectId)
 
-  // --- Helpers ---
   const checkRequirementsExist = async () => {
-    try {
-      const { data } = await apiClient.get(`/requirements/${projectId}`)
-      const exists = Array.isArray(data) && data.length > 0
-      setRequirementsReady(exists)
-      setArtifacts((prev) => ({ ...prev, srs: exists }))
-      return exists
-    } catch { return false }
+    const { data } = await apiClient.get(`/requirements/${projectId}`)
+    const exists = Array.isArray(data) && data.length > 0
+    setRequirementsReady(exists)
+    setArtifacts((prev) => ({ ...prev, srs: exists }))
+    return exists
   }
 
   const syncPersistedArtifacts = async () => {
@@ -103,71 +89,87 @@ export default function InterviewPage() {
       setPersistedArtifacts(synced)
       setArtifacts((prev) => ({ ...prev, ...synced }))
       if (synced.srs) setRequirementsReady(true)
-    } catch { }
+    } catch {
+      // Endpoint may not exist yet — fail silently
+    }
   }
 
-  // --- Effects ---
-
-  // 1. جلب بيانات المشروع
+  // --- التأثير 1: تنظيف البيانات القديمة عند الانتقال لمشروع جديد ---
   useEffect(() => {
-    let isMounted = true
-    apiClient.get(`/projects/${projectId}`)
+    setProject(null)
+    setRequirementsReady(false)
+    setActiveDiagram('')
+    setDiagramSvgs({
+      useCase: '',
+      class: '',
+      activity: '',
+      sequence: '',
+    })
+    setArtifacts({
+      srs: false,
+      useCase: false,
+      class: false,
+      activity: false,
+      sequence: false,
+    })
+  }, [projectId])
+
+  // --- التأثير 2: جلب بيانات المشروع ---
+  useEffect(() => {
+    let isMounted = true;
+
+    apiClient
+      .get(`/projects/${projectId}`)
       .then(async ({ data }) => {
-        if (!isMounted) return
+        if (!isMounted) return;
         setProject(data)
         setPendingModel(`${data.model_provider}:${data.model_name}`)
         await Promise.allSettled([checkRequirementsExist(), syncPersistedArtifacts()])
       })
       .catch(() => {})
-    return () => { isMounted = false }
+
+    return () => { isMounted = false };
   }, [projectId])
 
-    useEffect(() => {
-    // نستخدم المتغير المحلي isMounted لضمان عدم تحديث State بعد خروج المستخدم
-    let isMounted = true;
+  // --- التأثير 3: تهيئة المحادثة ---
+  useEffect(() => {
+    // إذا كان هذا المشروع قيد التهيئة بالفعل، لا تكرر
+    if (currentLoadingId.current === projectId) return;
+    currentLoadingId.current = projectId;
+
+    let isMounted = true; 
 
     const setupChat = async () => {
-      // 1. لا نضع القفل هنا في البداية، بل ننتظر نتيجة الـ History
       try {
-        console.log(`[Init] Fetching history for project ${projectId}...`);
         const history = await loadHistory();
         
-        if (!isMounted) return;
+        if (!isMounted) return; 
 
-        // 2. فحص دقيق جداً: هل هو مشروع جديد فعلاً؟
-        // نتحقق من المصفوفة المرجعة ومن الحالة الحالية للرسائل
         const hasHistory = Array.isArray(history) && history.length > 0;
         
         if (!hasHistory) {
-          // 3. هنا نستخدم القفل فقط عند محاولة طلب البداية لمنع التكرار
-          if (initializationLock.current !== `start-${projectId}`) {
-            console.log(`[Init] No history found. Triggering startInterview...`);
-            initializationLock.current = `start-${projectId}`;
-            await startInterview();
-          }
-        } else {
-          console.log(`[Init] History found (${history.length} messages). Skipping start.`);
-          initializationLock.current = `loaded-${projectId}`;
+          await startInterview();
         }
-        
+
         setForceRefresh(prev => prev + 1);
+
       } catch (err) {
-        console.error("[Init] Critical error during setup:", err);
-        // في حالة الخطأ، نصفر القفل للسماح بمحاولة أخرى
-        initializationLock.current = null;
+        console.error("Failed to initialize chat:", err);
       }
     };
 
     setupChat();
-    return () => { isMounted = false; };
+
+    return () => {
+      isMounted = false;
+    };
   }, [projectId]);
 
-  // 3. التمرير التلقائي
+  // التمرير التلقائي للأسفل
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  // --- Voice Handlers ---
   const { isListening, toggleListening } = useVoiceToText((transcript) => {
     setInput((prev) => {
       const newText = prev.trim() ? `${prev} ${transcript}` : transcript
@@ -175,7 +177,6 @@ export default function InterviewPage() {
     })
   })
 
-  // --- Action Handlers ---
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -211,8 +212,18 @@ export default function InterviewPage() {
     }
   }
 
-  const handleOpenRequirementsUpdate = () => {
-    navigate(`/project/${projectId}/srs`)
+  // --- التعديل: ربط زر التحديث بـ API التحديث ---
+  const handleUpdateRequirements = async () => {
+    setSrsError(null)
+    setSrsLoading(true)
+    try {
+      await apiClient.post(`/requirements/update-requirements/${projectId}`)
+      navigate(`/project/${projectId}/srs`)
+    } catch (err) {
+      setSrsError(err.response?.data?.detail || "Failed to update requirements")
+    } finally {
+      setSrsLoading(false)
+    }
   }
 
   const callDiagramApi = async (key, endpoint) => {
@@ -256,7 +267,7 @@ export default function InterviewPage() {
 
   const handleReset = async () => {
     if (!window.confirm(t('archive_confirm'))) return
-    initializationLock.current = null; // فك القفل ليتمكن من البدء مجدداً
+    currentLoadingId.current = null; // فك القفل ليتمكن من البدء مجدداً
     await resetConversation()
     await startInterview()
   }
@@ -278,9 +289,13 @@ export default function InterviewPage() {
     }
   }
 
-  // --- Constants for UI ---
   const currentModelKey = project ? `${project.model_provider}:${project.model_name}` : ''
+  const currentModelName = project && models
+    ? models[project.model_provider]?.[project.model_name] || project.model_name
+    : ''
+
   const studioReady = isSaturated || requirementsReady
+
   const canGenerateBaseDiagrams = requirementsReady || isSaturated
   const canGenerateDependentDiagrams = artifacts.useCase && artifacts.class
   const buttonBaseClass =
@@ -305,10 +320,10 @@ export default function InterviewPage() {
         )}
       </div>
 
-      {/* --- MAIN LAYOUT --- */}
+      {/* --- MAIN PADDED LAYOUT --- */}
       <div className="flex-1 flex flex-row overflow-hidden p-4 gap-4">
         
-        {/* LEFT SECTION: CHAT */}
+        {/* ================= LEFT SECTION: CHAT ================= */}
         <div className="w-3/4 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
           
           <div className="flex-1 overflow-y-auto px-6 py-8 w-full scrollbar-hide">
@@ -317,7 +332,7 @@ export default function InterviewPage() {
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">{error}</div>
               )}
 
-              {/* MESSAGES LIST */}
+              {/* CHAT MESSAGES */}
               {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
 
               {/* LOADING INDICATOR */}
@@ -353,7 +368,7 @@ export default function InterviewPage() {
             </div>
           </div>
 
-          {/* INPUT BAR */}
+          {/* CHAT INPUT BOX */}
           <div className="bg-white px-6 py-4 border-t border-slate-100">
             <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-brand-300 focus-within:ring-1 focus-within:ring-brand-300 transition-all">
               <form onSubmit={handleSend} className="flex gap-2 items-end">
@@ -402,6 +417,7 @@ export default function InterviewPage() {
               </form>
             </div>
             
+            {/* Context Footer */}
             <div className="max-w-4xl mx-auto flex items-center justify-between mt-3 px-2">
               <p className="text-xs text-slate-400 font-medium">
                 {messages.length} {messages.length === 1 ? t('message_singular') : t('messages_plural')}
@@ -413,7 +429,7 @@ export default function InterviewPage() {
           </div>
         </div>
 
-        {/* RIGHT SECTION: STUDIO */}
+        {/* ================= RIGHT SECTION: STUDIO ================= */}
         <div className="w-1/4 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
           <div className="p-6 overflow-y-auto h-full">
             
@@ -436,27 +452,34 @@ export default function InterviewPage() {
               </div>
             ) : !requirementsReady && !isSaturated ? (
               <div className="mb-5 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
-                Continue the interview to unlock SRS and diagrams.
+                Continue the interview until saturation to unlock SRS and diagrams.
               </div>
             ) : null}
 
-            {srsError && <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{srsError}</div>}
-            {umlError && <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{umlError}</div>}
+            {srsError && (
+              <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{srsError}</div>
+            )}
+            {umlError && (
+              <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{umlError}</div>
+            )}
 
             <div className="mb-3 flex gap-2">
               <button
                 onClick={handleGenerateSRS}
                 disabled={srsLoading}
-                className="flex-1 h-10 px-3 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="flex-1 h-10 px-3 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {srsLoading ? 'Generating...' : 'Generate SRS'}
               </button>
+              
+              {/* --- الزر المحدث --- */}
               <button
-                onClick={handleOpenRequirementsUpdate}
+                onClick={handleUpdateRequirements}
                 disabled={!requirementsReady}
-                className="flex-1 h-10 px-3 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                title={!requirementsReady ? 'Generate SRS first.' : ''}
+                className="flex-1 h-10 px-3 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Update
+                Update Requirements
               </button>
             </div>
 
@@ -465,10 +488,20 @@ export default function InterviewPage() {
               <button
                 onClick={handleGenerateUseCase}
                 disabled={!canGenerateBaseDiagrams || umlLoading.useCase}
+                title={!canGenerateBaseDiagrams ? 'Generate/confirm SRS and complete interview first.' : ''}
                 className={`${buttonBaseClass} bg-purple-50/60 hover:bg-purple-100/80 hover:border-purple-200`}
               >
-                <div className="text-purple-600">
-                   {umlLoading.useCase ? <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>}
+                <div className="text-blue-600">
+                  {umlLoading.useCase ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Use Case<br/>Diagram</span>
               </button>
@@ -476,10 +509,20 @@ export default function InterviewPage() {
               <button 
                 onClick={handleGenerateClass}
                 disabled={!canGenerateBaseDiagrams || umlLoading.class}
+                title={!canGenerateBaseDiagrams ? 'Generate/confirm SRS and complete interview first.' : ''}
                 className={`${buttonBaseClass} bg-yellow-50/80 hover:bg-yellow-100 hover:border-yellow-200`}
               >
                 <div className="text-yellow-600">
-                  {umlLoading.class ? <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>}
+                  {umlLoading.class ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                  )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Class<br/>Diagram</span>
               </button>
@@ -487,10 +530,20 @@ export default function InterviewPage() {
               <button 
                 onClick={handleGenerateActivity}
                 disabled={!canGenerateDependentDiagrams || umlLoading.activity}
+                title={!canGenerateDependentDiagrams ? 'Generate Use Case and Class first.' : ''}
                 className={`${buttonBaseClass} bg-emerald-50/60 hover:bg-emerald-100/80 hover:border-emerald-200`}
               >
                 <div className="text-emerald-600">
-                  {umlLoading.activity ? <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>}
+                  {umlLoading.activity ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+                    </svg>
+                  )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Activity<br/>Diagram</span>
               </button>
@@ -498,10 +551,20 @@ export default function InterviewPage() {
               <button 
                 onClick={handleGenerateSequence}
                 disabled={!canGenerateDependentDiagrams || umlLoading.sequence || selectedUsecaseIdx === null}
+                title={!canGenerateDependentDiagrams ? 'Generate Use Case and Class first.' : ''}
                 className={`${buttonBaseClass} bg-indigo-50/70 hover:bg-indigo-100/80 hover:border-indigo-200`}
               >
                 <div className="text-indigo-600">
-                  {umlLoading.sequence ? <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h18M3 12h18M3 19h18" /></svg>}
+                  {umlLoading.sequence ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h18M3 12h18M3 19h18" />
+                    </svg>
+                  )}
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Sequence<br/>Diagram</span>
               </button>
