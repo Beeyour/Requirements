@@ -62,7 +62,7 @@ export default function InterviewPage() {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  const currentLoadingId = useRef(null) // قفل التهيئة يعتمد على الـ ID
+  const currentLoadingId = useRef(null)
 
   const { models } = useModels()
   const { messages, loading, isSaturated, error, loadHistory, startInterview, sendMessage, resetConversation } =
@@ -95,6 +95,7 @@ export default function InterviewPage() {
   }
 
   // --- التأثير 1: تنظيف البيانات القديمة عند الانتقال لمشروع جديد ---
+  // This completely decouples state between different project IDs
   useEffect(() => {
     setProject(null)
     setRequirementsReady(false)
@@ -132,9 +133,7 @@ export default function InterviewPage() {
   }, [projectId])
 
   // --- التأثير 3: تهيئة المحادثة ---
-  // --- التأثير 3: تهيئة المحادثة ---
   useEffect(() => {
-    // منع التكرار، لكن مع السماح لـ React Strict Mode بالعمل بشكل صحيح
     if (currentLoadingId.current === projectId) return;
     currentLoadingId.current = projectId;
 
@@ -143,19 +142,12 @@ export default function InterviewPage() {
     const setupChat = async () => {
       try {
         const history = await loadHistory();
-
-        // إذا تم تدمير المكون (كما يحدث في Strict Mode)، أوقف العملية القديمة
         if (!isMounted) return;
-
         const hasHistory = Array.isArray(history) && history.length > 0;
-
-        // إذا لم يكن هناك تاريخ (مشروع جديد)، اطلب البداية
         if (!hasHistory) {
           await startInterview();
         }
-
         setForceRefresh(prev => prev + 1);
-
       } catch (err) {
         console.error("Failed to initialize chat:", err);
       }
@@ -165,12 +157,10 @@ export default function InterviewPage() {
 
     return () => {
       isMounted = false;
-      // السطر السحري لحل مشكلة Strict Mode: فك القفل عند خروج المستخدم أو تدمير المكون
       currentLoadingId.current = null;
     };
   }, [projectId]);
 
-  // التمرير التلقائي للأسفل
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
@@ -217,7 +207,6 @@ export default function InterviewPage() {
     }
   }
 
-  // --- التعديل: ربط زر التحديث بـ API التحديث ---
   const handleUpdateRequirements = async () => {
     setSrsError(null)
     setSrsLoading(true)
@@ -228,6 +217,20 @@ export default function InterviewPage() {
       setSrsError(err.response?.data?.detail || "Failed to update requirements")
     } finally {
       setSrsLoading(false)
+    }
+  }
+
+  // --- NEW: View SRS using GET API ---
+  const handleViewSrs = async () => {
+    if (!requirementsReady) return;
+    try {
+      // Hit the GET endpoint as requested
+      await apiClient.get(`/requirements/${projectId}`);
+      // Redirect to the SRS view page
+      navigate(`/project/${projectId}/srs`);
+    } catch (err) {
+      setSrsError("Failed to fetch SRS document.");
+      console.error("Error fetching SRS:", err);
     }
   }
 
@@ -272,7 +275,7 @@ export default function InterviewPage() {
 
   const handleReset = async () => {
     if (!window.confirm(t('archive_confirm'))) return
-    currentLoadingId.current = null; // فك القفل ليتمكن من البدء مجدداً
+    currentLoadingId.current = null; 
     await resetConversation()
     await startInterview()
   }
@@ -295,12 +298,8 @@ export default function InterviewPage() {
   }
 
   const currentModelKey = project ? `${project.model_provider}:${project.model_name}` : ''
-  const currentModelName = project && models
-    ? models[project.model_provider]?.[project.model_name] || project.model_name
-    : ''
 
   const studioReady = isSaturated || requirementsReady
-
   const canGenerateBaseDiagrams = requirementsReady || isSaturated
   const canGenerateDependentDiagrams = artifacts.useCase && artifacts.class
   const buttonBaseClass =
@@ -309,11 +308,9 @@ export default function InterviewPage() {
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
-
       {/* --- HEADER --- */}
       <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
         <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
-
         {project && (
           <div className="px-6 py-2 bg-slate-50/50 flex border-t border-slate-100">
             <ModelSelector
@@ -327,10 +324,8 @@ export default function InterviewPage() {
 
       {/* --- MAIN PADDED LAYOUT --- */}
       <div className="flex-1 flex flex-row overflow-hidden p-4 gap-4">
-
         {/* ================= LEFT SECTION: CHAT ================= */}
         <div className="w-3/4 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
-
           <div className="flex-1 overflow-y-auto px-6 py-8 w-full scrollbar-hide">
             <div className="max-w-4xl mx-auto">
               {error && (
@@ -438,16 +433,37 @@ export default function InterviewPage() {
         <div className="w-1/4 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
           <div className="p-6 overflow-y-auto h-full">
 
+            {/* HEADER WITH VIEW BUTTON */}
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
-              {studioReady && (
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
+                {studioReady && (
+                  <span className="flex h-2.5 w-2.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                  </span>
+                )}
+              </div>
+              
+              <button
+                onClick={handleViewSrs}
+                disabled={!requirementsReady}
+                title={!requirementsReady ? 'Generate SRS first.' : 'View SRS Document'}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium ${
+                  requirementsReady
+                    ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
+                    : 'bg-slate-50 text-slate-400 opacity-50 cursor-not-allowed'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                View
+              </button>
             </div>
 
+            {/* INFO BANNERS */}
             {studioReady ? (
               <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-2xl text-xs text-green-800 flex items-start gap-2 shadow-sm">
                 <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -468,23 +484,40 @@ export default function InterviewPage() {
               <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{umlError}</div>
             )}
 
-            <div className="mb-3 flex gap-2">
+            {/* SINGLE SMART BUTTON FOR SRS */}
+            <div className="mb-5">
               <button
-                onClick={handleGenerateSRS}
-                disabled={srsLoading}
-                className="flex-1 h-10 px-3 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={requirementsReady ? handleUpdateRequirements : handleGenerateSRS}
+                disabled={srsLoading || (!requirementsReady && !isSaturated)}
+                className={`w-full flex items-center justify-center gap-2 h-11 px-4 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                  requirementsReady 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
-                {srsLoading ? 'Generating...' : 'Generate SRS'}
-              </button>
-
-              {/* --- الزر المحدث --- */}
-              <button
-                onClick={handleUpdateRequirements}
-                disabled={!requirementsReady}
-                title={!requirementsReady ? 'Generate SRS first.' : ''}
-                className="flex-1 h-10 px-3 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Update Requirements
+                {srsLoading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    {requirementsReady ? 'Updating...' : 'Generating...'}
+                  </>
+                ) : requirementsReady ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Update Requirements
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Generate SRS
+                  </>
+                )}
               </button>
             </div>
 
