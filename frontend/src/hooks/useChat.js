@@ -10,25 +10,35 @@ export function useChat(projectId) {
   const [error, setError] = useState(null)
 
   const loadHistory = useCallback(async () => {
-    if (!projectId) return
+    if (!projectId) return [] // إرجاع مصفوفة فارغة لحماية الكود
     setLoading(true)
     try {
       const { data } = await apiClient.get(`/chat/${projectId}/history`)
       setMessages(data)
+      
+      // 🌟 السطر السحري المفقود: إرجاع البيانات للصفحة لكي تفحصها
+      return data 
+      
     } catch (err) {
       setError(err.response?.data?.detail || t('err_load_history'))
+      return [] // إرجاع مصفوفة فارغة في حالة الخطأ
     } finally {
       setLoading(false)
     }
   }, [projectId, t])
 
   const startInterview = useCallback(async () => {
-    if (!projectId) return
+    if (!projectId) return null
+    setLoading(true) // 🌟 تشغيل الأنيميشن للتحميل عند البداية
     try {
       const { data } = await apiClient.post(`/chat/${projectId}/start`)
       setMessages([data])
+      return data
     } catch (err) {
       setError(err.response?.data?.detail || t('err_start_interview'))
+      return null
+    } finally {
+      setLoading(false) // 🌟 إيقاف التحميل
     }
   }, [projectId, t])
 
