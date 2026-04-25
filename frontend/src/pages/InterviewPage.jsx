@@ -50,8 +50,6 @@ export default function InterviewPage() {
     sequence: false,
   })
 
-  // Tracks whether each artifact was found on the server (persisted),
-  // as opposed to just generated in the current session.
   const [persistedArtifacts, setPersistedArtifacts] = useState({
     srs: false,
     useCase: false,
@@ -62,6 +60,8 @@ export default function InterviewPage() {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+  // مرجع لمنع تكرار التهيئة بسبب Strict Mode
+  const isInitializing = useRef(false) 
 
   const { models } = useModels()
   const { messages, loading, isSaturated, error, loadHistory, startInterview, sendMessage, resetConversation } =
@@ -75,12 +75,9 @@ export default function InterviewPage() {
     return exists
   }
 
-  // Fetches which diagrams already exist in the DB so returning users
-  // get their buttons unlocked immediately on mount.
   const syncPersistedArtifacts = async () => {
     try {
       const { data } = await apiClient.get(`/projects/${projectId}/artifacts`)
-      // Expected shape: { srs, use_case, class, activity, sequence }
       const synced = {
         srs:      !!data.srs,
         useCase:  !!data.use_case,
@@ -89,34 +86,56 @@ export default function InterviewPage() {
         sequence: !!data.sequence,
       }
       setPersistedArtifacts(synced)
-      // Merge into session artifacts so button-lock logic stays unified
       setArtifacts((prev) => ({ ...prev, ...synced }))
       if (synced.srs) setRequirementsReady(true)
     } catch {
-      // Endpoint may not exist yet — fail silently, fall back to session state
+      // Endpoint may not exist yet — fail silently
     }
   }
 
+  // 1. useEffect محسّن لجلب بيانات المشروع
   useEffect(() => {
+    let isMounted = true;
+
     apiClient
       .get(`/projects/${projectId}`)
       .then(async ({ data }) => {
+        if (!isMounted) return;
         setProject(data)
         setPendingModel(`${data.model_provider}:${data.model_name}`)
-        // Run both checks in parallel; neither should block the page from loading
         await Promise.allSettled([checkRequirementsExist(), syncPersistedArtifacts()])
       })
       .catch(() => {})
+
+    return () => { isMounted = false };
   }, [projectId])
 
+  // 2. useEffect مدمج لحل مشكلة تكرار الـ start
   useEffect(() => {
-    loadHistory().then(() => { })
-  }, [])
+    if (isInitializing.current) return;
+    isInitializing.current = true;
 
-  useEffect(() => {
-    if (messages.length === 0 && !loading) startInterview()
-  }, [messages, loading])
+    const setupChat = async () => {
+      try {
+        const history = await loadHistory();
+        
+        // إذا كان الهوك يُرجع البيانات، سنتحقق منها. 
+        // وإلا سنعتمد على أن المحادثة فارغة إذا لم تكن هناك رسائل
+        const hasHistory = Array.isArray(history) ? history.length > 0 : false;
+        
+        if (!hasHistory && messages.length === 0) {
+          await startInterview();
+        }
+      } catch (err) {
+        console.error("Failed to initialize chat:", err);
+      }
+    };
 
+    setupChat();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]); 
+
+  // التمرير التلقائي للأسفل
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
@@ -236,10 +255,7 @@ export default function InterviewPage() {
 
   const studioReady = isSaturated || requirementsReady
 
-  // Use Case & Class: enabled when requirements exist in DB OR interview is done
   const canGenerateBaseDiagrams = requirementsReady || isSaturated
-
-  // Activity & Sequence: enabled only when their prerequisites are already generated
   const canGenerateDependentDiagrams = artifacts.useCase && artifacts.class
   const buttonBaseClass =
     'flex flex-col items-start justify-between p-3.5 h-[90px] rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent'
@@ -263,10 +279,10 @@ export default function InterviewPage() {
         )}
       </div>
 
-      {/* --- MAIN PADDED LAYOUT (Creates the separated floating sections) --- */}
+      {/* --- MAIN PADDED LAYOUT --- */}
       <div className="flex-1 flex flex-row overflow-hidden p-4 gap-4">
         
-        {/* ================= LEFT SECTION: CHAT (3/4 WIDTH, ROUNDED) ================= */}
+        {/* ================= LEFT SECTION: CHAT ================= */}
         <div className="w-3/4 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
           
           <div className="flex-1 overflow-y-auto px-6 py-8 w-full scrollbar-hide">
@@ -372,7 +388,7 @@ export default function InterviewPage() {
           </div>
         </div>
 
-        {/* ================= RIGHT SECTION: STUDIO (1/4 WIDTH, ROUNDED) ================= */}
+        {/* ================= RIGHT SECTION: STUDIO ================= */}
         <div className="w-1/4 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
           <div className="p-6 overflow-y-auto h-full">
             
