@@ -122,34 +122,45 @@ export default function InterviewPage() {
     return () => { isMounted = false }
   }, [projectId])
 
-  // 2. حل مشكلة تكرار الطلبات وعدم ظهور الرسائل عند الانتقال
-  useEffect(() => {
-    // إذا تم تفعيل القفل لهذا المشروع مسبقاً، لا تفعل شيئاً
-    if (initializationLock.current === projectId) return;
-    initializationLock.current = projectId;
-
+    useEffect(() => {
+    // نستخدم المتغير المحلي isMounted لضمان عدم تحديث State بعد خروج المستخدم
     let isMounted = true;
+
     const setupChat = async () => {
+      // 1. لا نضع القفل هنا في البداية، بل ننتظر نتيجة الـ History
       try {
+        console.log(`[Init] Fetching history for project ${projectId}...`);
         const history = await loadHistory();
+        
         if (!isMounted) return;
 
+        // 2. فحص دقيق جداً: هل هو مشروع جديد فعلاً؟
+        // نتحقق من المصفوفة المرجعة ومن الحالة الحالية للرسائل
         const hasHistory = Array.isArray(history) && history.length > 0;
         
         if (!hasHistory) {
-          await startInterview();
+          // 3. هنا نستخدم القفل فقط عند محاولة طلب البداية لمنع التكرار
+          if (initializationLock.current !== `start-${projectId}`) {
+            console.log(`[Init] No history found. Triggering startInterview...`);
+            initializationLock.current = `start-${projectId}`;
+            await startInterview();
+          }
+        } else {
+          console.log(`[Init] History found (${history.length} messages). Skipping start.`);
+          initializationLock.current = `loaded-${projectId}`;
         }
         
-        // إجبار الواجهة على التحديث بعد تحميل البيانات
         setForceRefresh(prev => prev + 1);
       } catch (err) {
-        console.error("Chat setup failed:", err);
+        console.error("[Init] Critical error during setup:", err);
+        // في حالة الخطأ، نصفر القفل للسماح بمحاولة أخرى
+        initializationLock.current = null;
       }
     };
 
     setupChat();
     return () => { isMounted = false; };
-  }, [projectId]); 
+  }, [projectId]);
 
   // 3. التمرير التلقائي
   useEffect(() => {

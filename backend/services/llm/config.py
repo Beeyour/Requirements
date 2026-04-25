@@ -10,10 +10,10 @@ AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "google": {
         "gemini-3.1-flash-lite-preview": "Gemini 3.1 Flash Lite",
     },
-    "anthropic": {
-        "claude-3-5-sonnet-latest": "Claude 3.5 Sonnet",
-        "claude-3-opus-latest": "Claude 3 Opus",
-    },
+    # "anthropic": {
+    #     "claude-3-5-sonnet-latest": "Claude 3.5 Sonnet",
+    #     "claude-3-opus-latest": "Claude 3 Opus",
+    # },
 }
 
 DEFAULT_PROVIDER = "openai"
