@@ -9,7 +9,7 @@ import { useChat } from '../hooks/useChat'
 import { useModels } from '../hooks/useModels'
 import apiClient from '../api/client'
 import { useVoiceToText } from '../hooks/useVoiceToText'
-
+const [forceRefresh, setForceRefresh] = useState(0)
 export default function InterviewPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -60,8 +60,7 @@ export default function InterviewPage() {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  // مرجع لمنع تكرار التهيئة بسبب Strict Mode
-  const isInitializing = useRef(false) 
+
 
   const { models } = useModels()
   const { messages, loading, isSaturated, error, loadHistory, startInterview, sendMessage, resetConversation } =
@@ -110,30 +109,41 @@ export default function InterviewPage() {
     return () => { isMounted = false };
   }, [projectId])
 
-  // 2. useEffect مدمج لحل مشكلة تكرار الـ start
+
+// useEffect المخصص لتهيئة المحادثة عند فتح الصفحة أو تغيير المشروع
   useEffect(() => {
-    if (isInitializing.current) return;
-    isInitializing.current = true;
+    let isMounted = true; // أفضل من useRef للتعامل مع التنقل (Navigation)
 
     const setupChat = async () => {
       try {
+        // 1. جلب التاريخ للمشروع الحالي
         const history = await loadHistory();
         
-        // إذا كان الهوك يُرجع البيانات، سنتحقق منها. 
-        // وإلا سنعتمد على أن المحادثة فارغة إذا لم تكن هناك رسائل
+        // 2. إذا المستخدم انتقل لمشروع آخر بسرعة قبل انتهاء التحميل، نوقف العملية
+        if (!isMounted) return; 
+
         const hasHistory = Array.isArray(history) ? history.length > 0 : false;
         
-        if (!hasHistory && messages.length === 0) {
+        // 3. إذا المشروع جديد تماماً، نبدأ المقابلة
+        if (!hasHistory) {
           await startInterview();
         }
+
+        // 4. السطر السحري: إجبار الصفحة على التحديث لعرض الرسائل فوراً
+        setForceRefresh(prev => prev + 1);
+
       } catch (err) {
         console.error("Failed to initialize chat:", err);
       }
     };
 
     setupChat();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]); 
+
+    // التنظيف (Cleanup) عند الخروج من الصفحة أو تغيير الـ projectId
+    return () => {
+      isMounted = false;
+    };
+  }, [projectId]); // سيعمل هذا الكود تلقائياً في كل مرة يتغير فيها الـ ID 
 
   // التمرير التلقائي للأسفل
   useEffect(() => {
