@@ -94,8 +94,6 @@ export default function InterviewPage() {
     }
   }
 
-  // --- التأثير 1: تنظيف البيانات القديمة عند الانتقال لمشروع جديد ---
-  // This completely decouples state between different project IDs
   useEffect(() => {
     setProject(null)
     setRequirementsReady(false)
@@ -115,7 +113,6 @@ export default function InterviewPage() {
     })
   }, [projectId])
 
-  // --- التأثير 2: جلب بيانات المشروع ---
   useEffect(() => {
     let isMounted = true;
 
@@ -132,7 +129,6 @@ export default function InterviewPage() {
     return () => { isMounted = false };
   }, [projectId])
 
-  // --- التأثير 3: تهيئة المحادثة ---
   useEffect(() => {
     if (currentLoadingId.current === projectId) return;
     currentLoadingId.current = projectId;
@@ -220,13 +216,10 @@ export default function InterviewPage() {
     }
   }
 
-  // --- NEW: View SRS using GET API ---
   const handleViewSrs = async () => {
     if (!requirementsReady) return;
     try {
-      // Hit the GET endpoint as requested
       await apiClient.get(`/requirements/${projectId}`);
-      // Redirect to the SRS view page
       navigate(`/project/${projectId}/srs`);
     } catch (err) {
       setSrsError("Failed to fetch SRS document.");
@@ -473,7 +466,7 @@ export default function InterviewPage() {
               </div>
             ) : !requirementsReady && !isSaturated ? (
               <div className="mb-5 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
-                Continue the interview until saturation to unlock SRS and diagrams.
+                Continue the interview until saturation to unlock full diagram generation. Or click Generate SRS to begin.
               </div>
             ) : null}
 
@@ -488,7 +481,7 @@ export default function InterviewPage() {
             <div className="mb-5">
               <button
                 onClick={requirementsReady ? handleUpdateRequirements : handleGenerateSRS}
-                disabled={srsLoading || (!requirementsReady && !isSaturated)}
+                disabled={srsLoading}
                 className={`w-full flex items-center justify-center gap-2 h-11 px-4 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                   requirementsReady 
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
