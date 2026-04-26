@@ -20,8 +20,8 @@ export default function Navbar({ projectName }) {
   }
 
   return (
-    // bg-transparent allows it to perfectly match whatever page background it sits on
-    <nav className="bg-transparent px-6 py-4 flex items-center justify-between">
+    // Changed py-4 to py-2 to reduce the overall height of the navbar
+    <nav className="bg-transparent px-6 py-2 flex items-center justify-between">
       
       {/* LEFT: Logo + H1 Title */}
       <div className="flex items-center gap-4">
