@@ -20,33 +20,42 @@ export default function Navbar({ projectName }) {
   }
 
   return (
-    <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between relative">
+    // bg-transparent allows it to perfectly match whatever page background it sits on
+    <nav className="bg-transparent px-6 py-4 flex items-center justify-between">
       
-      {/* LEFT: SRS Analyst (Acts as Back to Dashboard) */}
-      <div className="flex-1 flex items-center justify-start">
+      {/* LEFT: Logo + H1 Title */}
+      <div className="flex items-center gap-4">
         <Link to="/" className="font-bold text-brand-600 text-lg tracking-tight hover:text-brand-700 transition-colors">
-          {t('srs_analyst')}
+          {t('srs_analyst', 'SRS Analyst')}
         </Link>
+        
+        {/* A subtle vertical divider between logo and title */}
+        {projectName && <div className="h-6 w-px bg-slate-300 hidden sm:block"></div>}
+        
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight truncate max-w-xl">
+          {projectName}
+        </h1>
       </div>
 
-      {/* CENTER: Project Name (Absolutely centered) */}
-      <div className="absolute left-1/2 -translate-x-1/2 font-semibold text-slate-800 hidden sm:block truncate max-w-[40%]">
-        {projectName}
-      </div>
-
-      {/* RIGHT: Translate, Email, Sign Out */}
-      <div className="flex-1 flex items-center justify-end gap-4">
+      {/* RIGHT: Pill Buttons & Email */}
+      <div className="flex items-center gap-4">
+        
+        {/* Translate Button: Pill shape, blue border, fills blue on hover */}
         <button
           onClick={toggleLanguage}
-          className="text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors"
+          className="px-4 py-1.5 text-sm font-medium text-brand-600 border border-brand-500 rounded-full hover:bg-brand-600 hover:text-white transition-all duration-200"
         >
-          {t('change_language')}
+          {t('change_language', 'عربي')}
         </button>
 
         <span className="text-slate-500 text-sm hidden sm:block">{user?.email}</span>
         
-        <button onClick={handleLogout} className="text-sm text-slate-600 hover:text-red-600 transition-colors">
-          {t('sign_out')}
+        {/* Sign Out Button: Pill shape, red border, fills red on hover */}
+        <button 
+          onClick={handleLogout} 
+          className="px-4 py-1.5 text-sm font-medium text-red-500 border border-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all duration-200"
+        >
+          {t('sign_out', 'Sign out')}
         </button>
       </div>
     </nav>

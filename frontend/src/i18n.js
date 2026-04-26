@@ -60,7 +60,7 @@ const resources = {
             "edit_req_btn_title": "Edit requirement",
 
             // Interview Page
-            "model_label": "Model:",
+            "model_label": "Model",
             "change_btn": "Change",
             "info_complete": "Information gathering complete.",
             "ready_generate": "Ready to generate your SRS document.",

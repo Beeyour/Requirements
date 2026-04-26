@@ -336,7 +336,7 @@ export default function InterviewPage() {
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
       
       {/* --- HEADER --- */}
-      <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
+      <div className="flex-none z-50 bg-slate-100">
         {/* Pass projectName so it centers nicely in the new Navbar */}
         <Navbar projectName={project?.app_name} />
       </div>
