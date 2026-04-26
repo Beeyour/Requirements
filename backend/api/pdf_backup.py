@@ -6,7 +6,7 @@ from backend.services.uml import usecase_service
 from backend.services.uml import class_digram_service
 from backend.services.uml import activity_digram_service
 from backend.services.uml import sequence_digram_service
-from backend.services.uml.persistence import get_cached_diagram, get_all_sequence_diagrams, get_latest_sequence_by_usecase_idx
+from backend.services.uml.persistence import get_cached_diagram, get_all_sequence_diagrams
 from backend.models.project import Project
 from io import BytesIO
 import tempfile
@@ -29,57 +29,6 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
     print("Warning: reportlab not installed. PDF generation will not work.")
-
-# Default model settings
-DEFAULT_PROVIDER = "openai"
-DEFAULT_MODEL = "gpt-4"
-
-async def _ensure_diagram_exists(db: Session, project_id: int, diagram_type: str, usecase_idx: int = None):
-    """Ensure diagram exists, generate if missing."""
-    print(f"Checking if {diagram_type} diagram exists for project {project_id}")
-    
-    if diagram_type == 'usecase':
-        cached = get_cached_diagram(db, usecase_service.UseCaseDiagram, project_id)
-        if not cached:
-            print(f"Use case diagram missing, generating...")
-            formatted = _get_formatted_requirements(project_id, db)
-            await usecase_service.generate_usecase(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
-    
-    elif diagram_type == 'class':
-        cached = get_cached_diagram(db, class_digram_service.ClassDiagram, project_id)
-        if not cached:
-            print(f"Class diagram missing, generating...")
-            formatted = _get_formatted_requirements(project_id, db)
-            await class_digram_service.generate_class(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
-    
-    elif diagram_type == 'activity':
-        cached = get_cached_diagram(db, activity_digram_service.ActivityDiagram, project_id)
-        if not cached:
-            print(f"Activity diagram missing, generating...")
-            formatted = _get_formatted_requirements(project_id, db)
-            await activity_digram_service.generate_activity(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
-    
-    elif diagram_type == 'sequence' and usecase_idx is not None:
-        cached = get_latest_sequence_by_usecase_idx(db, project_id, usecase_idx)
-        if not cached:
-            print(f"Sequence diagram {usecase_idx} missing, generating...")
-            formatted = _get_formatted_requirements(project_id, db)
-            await sequence_digram_service.generate_sequence(db, project_id, usecase_idx, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
-
-
-def _get_formatted_requirements(project_id: int, db: Session) -> str:
-    """Helper to get formatted requirements for diagram generation."""
-    requirements = requirement_service.get_project_requirements(db, project_id, False)
-    formatted_lines = ["### Project Functional Requirements List:"]
-    counter = 1
-    for req in requirements:
-        if req.is_active and req.type == 'Functional':
-            line = f"{counter}. {req.description} [Priority: {req.priority.name}]"
-            formatted_lines.append(line)
-            counter += 1
-    if counter == 1:
-        return ""
-    return "\n".join(formatted_lines)
 
 
 def _get_requirements_content(project_id: int, db: Session) -> Dict[str, Any]:
@@ -119,9 +68,6 @@ def _download_svg_as_temp_file(svg_url: str) -> str:
         print(f"Downloaded {len(response.content)} bytes of SVG content")
         
         # Convert SVG to ReportLab drawing
-        from svglib.svglib import svg2rlg
-        from reportlab.graphics import renderPM
-        
         drawing = svg2rlg(BytesIO(response.content))
         
         # Create temporary file
@@ -309,7 +255,7 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
 @router.get("/generate-pdf/{project_id}")
 async def generate_pdf(
     project_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     """Generate comprehensive PDF report with SRS and all UML diagrams."""
     
@@ -320,20 +266,6 @@ async def generate_pdf(
         )
     
     try:
-        # Ensure all diagrams exist before generating PDF
-        print("Ensuring all diagrams exist before PDF generation...")
-        
-        # Generate missing diagrams
-        await _ensure_diagram_exists(db, project_id, 'usecase')
-        await _ensure_diagram_exists(db, project_id, 'class')
-        await _ensure_diagram_exists(db, project_id, 'activity')
-        
-        # Generate all sequence diagrams for use cases
-        usecase_diagram = get_cached_diagram(db, usecase_service.UseCaseDiagram, project_id)
-        if usecase_diagram and usecase_diagram.get('data', {}).get('use_cases'):
-            for i, use_case in enumerate(usecase_diagram['data']['use_cases']):
-                await _ensure_diagram_exists(db, project_id, 'sequence', i)
-        
         # Get content data
         content_data = _get_requirements_content(project_id, db)
         
@@ -346,7 +278,7 @@ async def generate_pdf(
         temp_file.close()
         
         # In a real application, you might want to upload this to a cloud storage
-        # and return a permanent URL. For now, we'll return a temp file path.
+        # and return a permanent URL. For now, we'll return the temp file path.
         
         return {
             "message": "PDF generated successfully",
@@ -355,7 +287,21 @@ async def generate_pdf(
         }
         
     except Exception as e:
-        print(f"Error generating PDF: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+
+
+@router.get("/temp-files/{filename}")
+async def get_temp_file(filename: str):
+    """Serve temporary files (like generated PDFs)."""
+    temp_dir = tempfile.gettempdir()
+    file_path = os.path.join(temp_dir, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        file_path,
+        media_type='application/pdf',
+        filename=filename
+    )

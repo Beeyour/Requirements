@@ -97,6 +97,25 @@ export default function DiagramViewerPage() {
     const target = event.target
     console.log('SVG clicked:', target.tagName, target.textContent?.trim())
     
+    // Prevent default browser navigation
+    event.preventDefault()
+    event.stopPropagation()
+    
+    // Check if this is an <a> tag click from PlantUML
+    if (target.tagName === 'a') {
+      const href = target.getAttribute('href')
+      console.log('Intercepted PlantUML link:', href)
+      
+      // Extract usecase_idx from href pattern /generate-sequence/{project_id}/{usecase_idx}
+      const match = href.match(/\/generate-sequence\/\d+\/(\d+)/)
+      if (match) {
+        const usecaseIdx = parseInt(match[1])
+        console.log('Extracted usecase_idx:', usecaseIdx)
+        navigate(`/project/${projectId}/diagram/sequence?usecase_idx=${usecaseIdx}`)
+        return
+      }
+    }
+    
     // Find the use case name using multiple strategies
     let useCaseName = ''
 
