@@ -131,3 +131,21 @@ def get_latest_sequence_by_usecase_idx(
     if not usecase_record:
         return None
     return get_cached_diagram(db, SequenceDiagram, project_id, usecase_id=usecase_record.id)
+
+
+def get_all_sequence_diagrams(db: Session, project_id: int) -> list:
+    """Return all sequence diagrams for a project, ordered by usecase_idx.
+
+    Args:
+        db: SQLAlchemy session
+        project_id: Project ID
+
+    Returns:
+        List of SequenceDiagram ORM records
+    """
+    return (
+        db.query(SequenceDiagram)
+        .filter_by(project_id=project_id)
+        .order_by(SequenceDiagram.usecase_idx.asc())
+        .all()
+    )

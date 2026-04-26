@@ -26,17 +26,12 @@ export default function InterviewPage() {
   const [srsError, setSrsError] = useState(null)
   const [umlError, setUmlError] = useState(null)
   const [requirementsReady, setRequirementsReady] = useState(false)
-  const [activeDiagram, setActiveDiagram] = useState('')
   const [sequenceOptions, setSequenceOptions] = useState([])
   const [selectedUsecaseIdx, setSelectedUsecaseIdx] = useState(null)
   const [forceRefresh, setForceRefresh] = useState(0)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfError, setPdfError] = useState(null)
 
-  const [diagramSvgs, setDiagramSvgs] = useState({
-    useCase: '',
-    class: '',
-    activity: '',
-    sequence: '',
-  })
   const [umlLoading, setUmlLoading] = useState({
     useCase: false,
     class: false,
@@ -98,13 +93,8 @@ export default function InterviewPage() {
   useEffect(() => {
     setProject(null)
     setRequirementsReady(false)
-    setActiveDiagram('')
-    setDiagramSvgs({
-      useCase: '',
-      class: '',
-      activity: '',
-      sequence: '',
-    })
+    setSequenceOptions([])
+    setSelectedUsecaseIdx(null)
     setArtifacts({
       srs: false,
       useCase: false,
@@ -236,10 +226,28 @@ export default function InterviewPage() {
     setUmlLoading((prev) => ({ ...prev, [key]: true }))
     try {
       const { data } = await apiClient.get(endpoint)
-      const nextSvg = data?.svg_url || ''
-      setDiagramSvgs((prev) => ({ ...prev, [key]: nextSvg }))
+      
+      // Navigate to diagram viewer instead of showing inline
+      if (key === 'useCase') {
+        navigate(`/project/${projectId}/diagram/usecase`)
+      } else if (key === 'class') {
+        navigate(`/project/${projectId}/diagram/class`)
+      } else if (key === 'activity') {
+        navigate(`/project/${projectId}/diagram/activity`)
+      } else if (key === 'sequence') {
+        navigate(`/project/${projectId}/diagram/sequence?usecase_idx=${selectedUsecaseIdx}`)
+      }
+      
+      // Store data for potential future use
+      if (data?.data?.use_cases) {
+        const options = data.data.use_cases.map((name, idx) => ({ idx, name }))
+        setSequenceOptions(options)
+        if (options.length > 0 && selectedUsecaseIdx === null) {
+          setSelectedUsecaseIdx(options[0].idx)
+        }
+      }
+      
       setArtifacts((prev) => ({ ...prev, [key]: true }))
-      setActiveDiagram(key)
       return data
     } catch (err) {
       setUmlError(err.response?.data?.detail || t('err_generate_uml'))
@@ -250,11 +258,7 @@ export default function InterviewPage() {
   }
 
   const handleGenerateUseCase = async () => {
-    const data = await callDiagramApi('useCase', `/generate-usecase/${projectId}`)
-    if (!data?.data?.use_cases) return
-    const options = data.data.use_cases.map((name, idx) => ({ idx, name }))
-    setSequenceOptions(options)
-    if (options.length > 0) setSelectedUsecaseIdx(options[0].idx)
+    await callDiagramApi('useCase', `/generate-usecase/${projectId}`)
   }
 
   const handleGenerateClass = async () => {
@@ -268,6 +272,25 @@ export default function InterviewPage() {
   const handleGenerateSequence = async () => {
     if (selectedUsecaseIdx === null || selectedUsecaseIdx === undefined) return
     await callDiagramApi('sequence', `/generate-sequence/${projectId}/${selectedUsecaseIdx}`)
+  }
+
+  const handleGeneratePDF = async () => {
+    setPdfError(null)
+    setPdfLoading(true)
+    try {
+      const { data } = await apiClient.get(`/generate-pdf/${projectId}`)
+      // Create a download link for the PDF
+      const link = document.createElement('a')
+      link.href = data.pdf_url
+      link.download = `${project?.app_name || 'SRS'}_Comprehensive_Report.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err) {
+      setPdfError(err.response?.data?.detail || 'Failed to generate PDF')
+    } finally {
+      setPdfLoading(false)
+    }
   }
 
   const handleReset = async () => {
@@ -305,7 +328,6 @@ export default function InterviewPage() {
   const canGenerateDependentDiagrams = artifacts.useCase && artifacts.class
   const buttonBaseClass =
     'flex flex-col items-start justify-between p-3.5 h-[90px] rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent'
-  const activeSvgUrl = activeDiagram ? diagramSvgs[activeDiagram] : ''
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
@@ -467,6 +489,9 @@ export default function InterviewPage() {
             {umlError && (
               <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{umlError}</div>
             )}
+            {pdfError && (
+              <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{pdfError}</div>
+            )}
 
             <div className="mb-3 flex gap-2">
               <button
@@ -485,6 +510,33 @@ export default function InterviewPage() {
                 className="flex-1 h-10 px-3 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Update Requirements
+              </button>
+            </div>
+
+            {/* PDF Generation Button */}
+            <div className="mb-3">
+              <button
+                onClick={handleGeneratePDF}
+                disabled={pdfLoading || !requirementsReady}
+                title={!requirementsReady ? 'Generate SRS first.' : ''}
+                className="w-full h-10 px-3 bg-green-600 text-white rounded-xl text-xs font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {pdfLoading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Generate PDF Comprehensive Report
+                  </>
+                )}
               </button>
             </div>
 
@@ -594,15 +646,6 @@ export default function InterviewPage() {
                 )}
               </select>
             </div>
-
-            {activeSvgUrl && (
-              <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                <div className="px-3 py-2 text-xs font-medium text-slate-700 border-b border-slate-200 capitalize">
-                  {activeDiagram} diagram
-                </div>
-                <img src={activeSvgUrl} alt={`${activeDiagram} diagram`} className="w-full h-auto bg-white" />
-              </div>
-            )}
           </div>
         </div>
       </div>

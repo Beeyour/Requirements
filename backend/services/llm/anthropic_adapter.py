@@ -26,6 +26,13 @@ class AnthropicAdapter(BaseLLMAdapter):
         if not filtered_msgs:
             filtered_msgs = [{"role": "user", "content": "Begin analysis."}]
 
+        # Prepare system prompt with JSON enforcement if needed
+        if is_json:
+            if system_prompt:
+                system_prompt += "\n\nYou MUST respond with valid JSON only. Do not include any text outside the JSON structure."
+            else:
+                system_prompt = "You MUST respond with valid JSON only. Do not include any text outside the JSON structure."
+
         # Using 'await' because the client is now async
         response = await self.client.messages.create(
             model=model,
