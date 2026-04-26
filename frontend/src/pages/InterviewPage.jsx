@@ -223,7 +223,6 @@ export default function InterviewPage() {
     try {
       const { data } = await apiClient.get(endpoint)
 
-      // Navigate to diagram viewer instead of showing inline
       if (key === 'useCase') {
         navigate(`/project/${projectId}/diagram/usecase`)
       } else if (key === 'class') {
@@ -234,7 +233,6 @@ export default function InterviewPage() {
         navigate(`/project/${projectId}/diagram/sequence?usecase_idx=${selectedUsecaseIdx}`)
       }
 
-      // Store data for potential future use
       if (data?.data?.use_cases) {
         const options = data.data.use_cases.map((name, idx) => ({ idx, name }))
         setSequenceOptions(options)
@@ -289,7 +287,6 @@ export default function InterviewPage() {
     setPdfLoading(true)
     try {
       const { data } = await apiClient.get(`/generate-pdf/${projectId}`)
-      // Create a download link for the PDF
       const link = document.createElement('a')
       link.href = data.pdf_url
       link.download = `${project?.app_name || 'SRS'}_Comprehensive_Report.pdf`
@@ -337,18 +334,11 @@ export default function InterviewPage() {
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
+      
       {/* --- HEADER --- */}
       <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
-        <Navbar projectName={project?.app_name} backTo="/" backLabel={t('dashboard')} />
-        {project && (
-          <div className="px-6 py-2 bg-slate-50/50 flex border-t border-slate-100">
-            <ModelSelector
-              value={currentModelKey}
-              onChange={handleModelChange}
-              models={models}
-            />
-          </div>
-        )}
+        {/* Pass projectName so it centers nicely in the new Navbar */}
+        <Navbar projectName={project?.app_name} />
       </div>
 
       {/* --- MAIN PADDED LAYOUT --- */}
@@ -397,8 +387,8 @@ export default function InterviewPage() {
             </div>
           </div>
 
-          {/* CHAT INPUT BOX */}
-          <div className="bg-white px-6 py-4 border-t border-slate-100">
+          {/* CHAT INPUT BOX - Removed top border to make it minimalist */}
+          <div className="bg-white px-6 py-4">
             <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-brand-300 focus-within:ring-1 focus-within:ring-brand-300 transition-all">
               <form onSubmit={handleSend} className="flex gap-2 items-end">
                 <textarea
@@ -413,19 +403,20 @@ export default function InterviewPage() {
                 />
 
                 <div className="flex gap-1 pb-1 pr-1">
+                  {/* Voice Button - Transparent background, translucent hover */}
                   <button
                     type="button"
                     onClick={toggleListening}
                     className={`p-2.5 rounded-xl transition-all ${isListening
-                      ? 'bg-red-500 text-white scale-110 shadow-md'
-                      : 'text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                      ? 'bg-red-50 text-red-600 scale-110 shadow-sm'
+                      : 'bg-transparent text-slate-400 hover:bg-slate-200 hover:text-slate-600'
                       }`}
                   >
                     {isListening ? (
                       <div className="flex gap-[3px] h-4 items-center">
-                        <span className="w-1 h-2 bg-white animate-bounce" />
-                        <span className="w-1 h-4 bg-white animate-bounce [animation-delay:0.2s]" />
-                        <span className="w-1 h-3 bg-white animate-bounce [animation-delay:0.4s]" />
+                        <span className="w-1 h-2 bg-currentColor animate-bounce" />
+                        <span className="w-1 h-4 bg-currentColor animate-bounce [animation-delay:0.2s]" />
+                        <span className="w-1 h-3 bg-currentColor animate-bounce [animation-delay:0.4s]" />
                       </div>
                     ) : (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -433,12 +424,14 @@ export default function InterviewPage() {
                       </svg>
                     )}
                   </button>
+
+                  {/* Send Button - Transparent background, translucent hover, rotated 90deg */}
                   <button
                     type="submit"
                     disabled={loading || !input.trim()}
-                    className="p-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2.5 bg-transparent text-brand-600 rounded-xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <svg className="w-4 h-4 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                   </button>
@@ -446,11 +439,20 @@ export default function InterviewPage() {
               </form>
             </div>
 
-            {/* Context Footer */}
+            {/* Context Footer - Placed ModelSelector here on the left side */}
             <div className="max-w-4xl mx-auto flex items-center justify-between mt-3 px-2">
-              <p className="text-xs text-slate-400 font-medium">
-                {messages.length} {messages.length === 1 ? t('message_singular') : t('messages_plural')}
-              </p>
+              <div className="flex items-center gap-4">
+                {project && (
+                  <ModelSelector
+                    value={currentModelKey}
+                    onChange={handleModelChange}
+                    models={models}
+                  />
+                )}
+                <p className="text-xs text-slate-400 font-medium">
+                  {messages.length} {messages.length === 1 ? t('message_singular') : t('messages_plural')}
+                </p>
+              </div>
               <button onClick={handleReset} className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors">
                 {t('reset_conv')}
               </button>
