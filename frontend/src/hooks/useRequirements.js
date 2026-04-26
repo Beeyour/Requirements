@@ -36,7 +36,7 @@ export function useRequirements(projectId) {
   }, [projectId])
 
   const updateRequirement = useCallback(async (id, description, changeReason) => {
-    const { data } = await apiClient.put(`/update-requirement/${id}`, {
+    const { data } = await apiClient.put(`/requirements/update-requirement/${id}`, {
       description,
       change_reason: changeReason,
     })
