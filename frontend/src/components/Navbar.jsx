@@ -32,9 +32,9 @@ export default function Navbar({ projectName }) {
         {/* A subtle vertical divider between logo and title */}
         {projectName && <div className="h-6 w-px bg-slate-300 hidden sm:block"></div>}
         
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight truncate max-w-xl">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight truncate max-w-xl">
           {projectName}
-        </h1>
+        </h2>
       </div>
 
       {/* RIGHT: Pill Buttons & Email */}

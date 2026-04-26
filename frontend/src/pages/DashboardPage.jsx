@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next' // 1. IMPORT HOOK
+import { useTranslation } from 'react-i18next'
 
 import Navbar from '../components/Navbar'
 import ProjectCard from '../components/ProjectCard'
@@ -10,7 +10,7 @@ import { useModels } from '../hooks/useModels'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { t } = useTranslation() // 2. INITIALIZE HOOK
+  const { t } = useTranslation()
 
   const { projects, loading, error, fetchProjects, createProject, deleteProject } = useProjects()
   const { models, defaultModel } = useModels()
@@ -20,6 +20,9 @@ export default function DashboardPage() {
   const [selectedModel, setSelectedModel] = useState(defaultModel)
   const [creating, setCreating] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  
+  // NEW: State for the Grid vs List view toggle
+  const [viewMode, setViewMode] = useState('grid')
 
   useEffect(() => { fetchProjects() }, [fetchProjects])
   useEffect(() => { setSelectedModel(defaultModel) }, [defaultModel])
@@ -49,7 +52,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* 1. WIDENED CONTAINER: Changed max-w-6xl to max-w-[90rem] (1440px) */}
+      <main className="max-w-[90rem] mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{t('projects')}</h1>
@@ -57,21 +61,54 @@ export default function DashboardPage() {
               {projects.length} {projects.length !== 1 ? t('projects_plural') : t('project_singular')}
             </p>
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            {t('new_project')}
-          </button>
+          
+          <div className="flex items-center gap-4">
+            {/* 2. TOGGLE BUTTONS: Placed left of the New Project button */}
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'grid' 
+                    ? 'bg-slate-100 text-slate-800 shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                }`}
+                title="Grid View"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'list' 
+                    ? 'bg-slate-100 text-slate-800 shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                }`}
+                title="List View"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t('new_project')}
+            </button>
+          </div>
         </div>
 
         {showCreate && (
-          <div className="mb-8 bg-white rounded-xl border border-brand-200 p-5 shadow-sm">
+          <div className="mb-8 bg-white rounded-xl border border-brand-200 p-5 shadow-sm animate-in fade-in slide-in-from-top-2">
             <h3 className="font-semibold text-slate-800 mb-4">{t('new_project')}</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleCreate} className="space-y-4 max-w-xl">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   {t('app_name_label')}
@@ -134,20 +171,36 @@ export default function DashboardPage() {
               <span className="text-sm">{t('loading_projects')}</span>
             </div>
           </div>
-        ) : projects.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-slate-700 font-medium mb-1">{t('no_projects')}</h3>
-            <p className="text-slate-400 text-sm">
-              {t('no_projects_desc')}
-            </p>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          /* Conditional classes based on viewMode state */
+          <div className={
+            viewMode === 'grid' 
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6" 
+              : "flex flex-col gap-4 max-w-5xl w-full"
+          }>
+            
+            {/* 3. CREATE NEW PROJECT TILE: Always shown as the first item */}
+            <button
+              onClick={() => setShowCreate(true)}
+              className={`flex items-center justify-center bg-slate-50/50 border-2 border-dashed border-slate-300 rounded-xl hover:border-brand-400 hover:bg-brand-50/50 transition-all group text-center cursor-pointer ${
+                viewMode === 'grid' 
+                  ? 'flex-col p-6 min-h-[210px]' 
+                  : 'flex-row p-6 h-[116px] gap-4 justify-start text-left'
+              }`}
+            >
+              <div className={`bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-200 group-hover:border-brand-300 group-hover:scale-110 transition-transform ${
+                viewMode === 'grid' ? 'w-14 h-14 mb-4' : 'w-12 h-12 flex-shrink-0'
+              }`}>
+                <svg className="w-6 h-6 text-slate-400 group-hover:text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <span className="font-semibold text-slate-600 group-hover:text-brand-700 text-lg">
+                Create New Project
+              </span>
+            </button>
+
+            {/* Existing Projects Mapping */}
             {projects.map((p) => (
               <ProjectCard key={p.id} project={p} onDelete={(id) => setDeleteConfirm(id)} />
             ))}
