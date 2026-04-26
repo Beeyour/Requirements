@@ -91,10 +91,28 @@ export default function DiagramViewerPage() {
   }, [projectId, diagramType])
 
   const handleSvgClick = (event) => {
-    // Only handle clicks for use case diagrams
+    const target = event.target
+
+    // 1. Handle Sequence Diagram "Back" button click
+    if (diagramType === 'sequence') {
+      const linkTag = target.closest('a');
+      const textContent = target.textContent?.toLowerCase() || '';
+      
+      // Check if clicked element is part of a back link
+      if (
+        (linkTag && (linkTag.getAttribute('href')?.includes('usecase') || linkTag.textContent?.toLowerCase().includes('back'))) ||
+        textContent.includes('back to use case')
+      ) {
+        event.preventDefault()
+        event.stopPropagation()
+        navigate(`/project/${projectId}/diagram/usecase`)
+      }
+      return; // Sequence diagrams don't need the usecase logic below
+    }
+
+    // 2. Only handle clicks for use case diagrams
     if (diagramType !== 'usecase') return
 
-    const target = event.target
     console.log('SVG clicked:', target.tagName, target.textContent?.trim())
     
     // Prevent default browser navigation
@@ -227,127 +245,108 @@ export default function DiagramViewerPage() {
     }
   }
 
-  const getBackPath = () => {
+  const handleBack = () => {
     if (diagramType === 'sequence') {
-      return `/project/${projectId}/diagram/usecase`
+      navigate(`/project/${projectId}/diagram/usecase`)
+    } else {
+      navigate(`/project/${projectId}/interview`)
     }
-    return `/project/${projectId}/interview`
-  }
-
-  if (loading) {
-    return (
-      <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
-        <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
-          <Navbar projectName={project?.app_name || 'Loading...'} backTo={getBackPath()} backLabel="Back" />
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading diagram...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
-        <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
-          <Navbar projectName={project?.app_name || 'Error'} backTo={getBackPath()} backLabel="Back" />
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Error Loading Diagram</h3>
-            <p className="text-slate-600">{error}</p>
-            <button
-              onClick={() => navigate(getBackPath())}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-none z-50 bg-white shadow-sm border-b border-slate-200/50">
-        <Navbar 
-          projectName={project?.app_name || 'Diagram Viewer'} 
-          backTo={getBackPath()} 
-          backLabel={diagramType === 'sequence' ? 'Back to Use Case' : 'Back to Interview'} 
-        />
-        
-        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">{getDiagramTitle()}</h1>
-              {diagramType === 'usecase' && useCases.length > 0 && (
-                <p className="text-sm text-slate-600 mt-1">
-                  Click on any use case to view its sequence diagram
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Back to Studio Button */}
-              <button
-                onClick={() => navigate(`/project/${projectId}/interview`)}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                Back to Studio
-              </button>
-              {diagramType === 'usecase' && (
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                  Interactive
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* --- HEADER --- */}
+      <div className="flex-none z-50 bg-slate-100">
+        {/* Same Navbar as Interview/Dashboard */}
+        <Navbar projectName={project?.app_name} />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className="w-full mx-auto">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
-            <div className="p-6 overflow-auto">
-              {diagramSvg ? (
-                <div 
-                  ref={svgContainerRef}
-                  className={`min-w-max flex justify-center ${diagramType === 'usecase' ? 'cursor-pointer' : ''}`}
-                  onClick={handleSvgClick}
-                  dangerouslySetInnerHTML={{ __html: diagramSvg }}
-                />
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Diagram Available</h3>
-                  <p className="text-slate-600">
-                    {diagramType === 'sequence' 
-                      ? 'Please generate a use case diagram first to access sequence diagrams.'
-                      : 'This diagram has not been generated yet.'}
+      {/* --- MAIN PADDED LAYOUT --- */}
+      <div className="flex-1 flex flex-col overflow-hidden p-6 gap-4">
+        
+        {/* Unified Tile for Title and Diagram */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full max-w-7xl mx-auto w-full relative">
+          
+          {/* Header section with bottom border */}
+          <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              {/* Back Button */}
+              <button 
+                onClick={handleBack}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Go Back"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
+              
+              <div>
+                <h1 className="text-lg font-semibold text-slate-800 leading-tight">{getDiagramTitle()}</h1>
+                {diagramType === 'usecase' && useCases.length > 0 && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Click on any use case to view its sequence diagram
                   </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            {/* Interactive Badge */}
+            {diagramType === 'usecase' && (
+              <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-md border border-blue-100">
+                Interactive
+              </span>
+            )}
+          </div>
+
+          {/* Diagram Area */}
+          <div className="flex-1 overflow-auto p-6 bg-slate-50/30 flex items-center justify-center">
+            {loading ? (
+              <div className="text-center">
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-500 text-sm font-medium">Loading diagram...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center max-w-md mx-auto">
+                <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-semibold text-slate-800 mb-1">Error Loading Diagram</h3>
+                <p className="text-sm text-slate-500 mb-4">{error}</p>
+                <button
+                  onClick={handleBack}
+                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  Go Back
+                </button>
+              </div>
+            ) : diagramSvg ? (
+              <div 
+                ref={svgContainerRef}
+                className={`min-w-max bg-white rounded-xl shadow-sm border border-slate-100 p-8 ${diagramType === 'usecase' ? 'cursor-pointer hover:border-blue-200 transition-colors' : ''}`}
+                onClick={handleSvgClick}
+                dangerouslySetInnerHTML={{ __html: diagramSvg }}
+              />
+            ) : (
+              <div className="text-center">
+                <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-medium text-slate-800 mb-1">No Diagram Available</h3>
+                <p className="text-sm text-slate-500">
+                  {diagramType === 'sequence' 
+                    ? 'Please generate a use case diagram first to access sequence diagrams.'
+                    : 'This diagram has not been generated yet.'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
+        
       </div>
     </div>
   )
