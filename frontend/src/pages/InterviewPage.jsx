@@ -26,25 +26,23 @@ export default function InterviewPage() {
   const [srsError, setSrsError] = useState(null)
   const [umlError, setUmlError] = useState(null)
   const [requirementsReady, setRequirementsReady] = useState(false)
-  const [sequenceOptions, setSequenceOptions] = useState([])
-  const [selectedUsecaseIdx, setSelectedUsecaseIdx] = useState(null)
   const [forceRefresh, setForceRefresh] = useState(0)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfError, setPdfError] = useState(null)
 
+  // 1. Removed sequence state from umlLoading
   const [umlLoading, setUmlLoading] = useState({
     useCase: false,
     class: false,
     activity: false,
-    sequence: false,
   })
 
+  // 2. Removed sequence from artifacts
   const [artifacts, setArtifacts] = useState({
     srs: false,
     useCase: false,
     class: false,
     activity: false,
-    sequence: false,
   })
 
   const [persistedArtifacts, setPersistedArtifacts] = useState({
@@ -52,7 +50,6 @@ export default function InterviewPage() {
     useCase: false,
     class: false,
     activity: false,
-    sequence: false,
   })
 
   const messagesEndRef = useRef(null)
@@ -79,7 +76,6 @@ export default function InterviewPage() {
         useCase: !!data.use_case,
         class: !!data.class,
         activity: !!data.activity,
-        sequence: !!data.sequence,
       }
       setPersistedArtifacts(synced)
       setArtifacts((prev) => ({ ...prev, ...synced }))
@@ -92,14 +88,11 @@ export default function InterviewPage() {
   useEffect(() => {
     setProject(null)
     setRequirementsReady(false)
-    setSequenceOptions([])
-    setSelectedUsecaseIdx(null)
     setArtifacts({
       srs: false,
       useCase: false,
       class: false,
       activity: false,
-      sequence: false,
     })
   }, [projectId])
 
@@ -217,6 +210,7 @@ export default function InterviewPage() {
     }
   }
 
+  // 3. Removed sequence logic from callDiagramApi
   const callDiagramApi = async (key, endpoint) => {
     setUmlError(null)
     setUmlLoading((prev) => ({ ...prev, [key]: true }))
@@ -229,16 +223,6 @@ export default function InterviewPage() {
         navigate(`/project/${projectId}/diagram/class`)
       } else if (key === 'activity') {
         navigate(`/project/${projectId}/diagram/activity`)
-      } else if (key === 'sequence') {
-        navigate(`/project/${projectId}/diagram/sequence?usecase_idx=${selectedUsecaseIdx}`)
-      }
-
-      if (data?.data?.use_cases) {
-        const options = data.data.use_cases.map((name, idx) => ({ idx, name }))
-        setSequenceOptions(options)
-        if (options.length > 0 && selectedUsecaseIdx === null) {
-          setSelectedUsecaseIdx(options[0].idx)
-        }
       }
 
       setArtifacts((prev) => ({ ...prev, [key]: true }))
@@ -261,11 +245,6 @@ export default function InterviewPage() {
 
   const handleGenerateActivity = async () => {
     await callDiagramApi('activity', `/generate-activity/${projectId}`)
-  }
-
-  const handleGenerateSequence = async () => {
-    if (selectedUsecaseIdx === null || selectedUsecaseIdx === undefined) return
-    await callDiagramApi('sequence', `/generate-sequence/${projectId}/${selectedUsecaseIdx}`)
   }
 
   const getFriendlyErrorMessage = (error) => {
@@ -328,7 +307,6 @@ export default function InterviewPage() {
 
   const studioReady = isSaturated || requirementsReady
   const canGenerateBaseDiagrams = requirementsReady || isSaturated
-  const canGenerateDependentDiagrams = artifacts.useCase && artifacts.class
   const buttonBaseClass =
     'flex flex-col items-start justify-between p-3.5 h-[90px] rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-left border border-transparent'
 
@@ -337,7 +315,6 @@ export default function InterviewPage() {
       
       {/* --- HEADER --- */}
       <div className="flex-none z-50 bg-slate-100">
-        {/* Pass projectName so it centers nicely in the new Navbar */}
         <Navbar projectName={project?.app_name} />
       </div>
 
@@ -345,16 +322,20 @@ export default function InterviewPage() {
       <div className="flex-1 flex flex-row overflow-hidden p-4 gap-4">
         {/* ================= LEFT SECTION: CHAT ================= */}
         <div className="w-3/4 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
-          <div className="flex-1 overflow-y-auto px-6 py-8 w-full scrollbar-hide">
+          
+          {/* NEW: Chat Title Header with bottom border */}
+          <div className="px-6 py-5 border-b border-slate-200 flex-shrink-0 text-left bg-white z-10">
+            <h2 className="text-lg font-semibold text-slate-800">Chat</h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-6 w-full scrollbar-hide">
             <div className="max-w-4xl mx-auto">
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-start">{error}</div>
               )}
 
-              {/* CHAT MESSAGES */}
               {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
 
-              {/* LOADING INDICATOR */}
               {loading && (
                 <div className="flex justify-start mb-4 animate-in fade-in slide-in-from-bottom-2">
                   <div className="flex gap-3 max-w-[80%]">
@@ -387,7 +368,6 @@ export default function InterviewPage() {
             </div>
           </div>
 
-          {/* CHAT INPUT BOX - Removed top border to make it minimalist */}
           <div className="bg-white px-6 py-4">
             <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-brand-300 focus-within:ring-1 focus-within:ring-brand-300 transition-all">
               <form onSubmit={handleSend} className="flex gap-2 items-end">
@@ -403,7 +383,6 @@ export default function InterviewPage() {
                 />
 
                 <div className="flex gap-1 pb-1 pr-1">
-                  {/* Voice Button - Transparent background, translucent hover */}
                   <button
                     type="button"
                     onClick={toggleListening}
@@ -425,7 +404,6 @@ export default function InterviewPage() {
                     )}
                   </button>
 
-                  {/* Send Button - Transparent background, translucent hover, rotated 90deg */}
                   <button
                     type="submit"
                     disabled={loading || !input.trim()}
@@ -439,7 +417,6 @@ export default function InterviewPage() {
               </form>
             </div>
 
-            {/* Context Footer - Placed ModelSelector here on the left side */}
             <div className="max-w-4xl mx-auto flex items-center justify-between mt-3 px-2">
               <div className="flex items-center gap-4">
                 {project && (
@@ -464,8 +441,8 @@ export default function InterviewPage() {
         <div className="w-1/4 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
           <div className="p-6 overflow-y-auto h-full">
 
-            {/* HEADER WITH VIEW BUTTON */}
-            <div className="flex items-center justify-between mb-5">
+            {/* NEW: Added pb-4 mb-5 and border-b to match Chat header styling */}
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-slate-800">Studio</h2>
                 {studioReady && (
@@ -493,7 +470,6 @@ export default function InterviewPage() {
               </button>
             </div>
 
-            {/* INFO BANNERS */}
             {studioReady ? (
               <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-2xl text-xs text-green-800 flex items-start gap-2 shadow-sm">
                 <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -538,10 +514,7 @@ export default function InterviewPage() {
               </div>
             )}
 
-            {/* SRS AND PDF ACTION BUTTONS */}
             <div className="mb-5 flex gap-3">
-
-              {/* LEFT BUTTON: Generate / Update SRS */}
               <button
                 onClick={requirementsReady ? handleUpdateRequirements : handleGenerateSRS}
                 disabled={srsLoading}
@@ -575,7 +548,6 @@ export default function InterviewPage() {
                 )}
               </button>
 
-              {/* RIGHT BUTTON: Export PDF */}
               <button
                 onClick={handleGeneratePDF}
                 disabled={pdfLoading || !requirementsReady}
@@ -602,7 +574,8 @@ export default function InterviewPage() {
             </div>
 
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Diagrams</h3>
-            <div className="grid grid-cols-2 gap-3">
+            {/* NEW: Changed to grid-cols-3 and deleted sequence button */}
+            <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={handleGenerateUseCase}
                 disabled={!canGenerateBaseDiagrams || umlLoading.useCase}
@@ -645,10 +618,11 @@ export default function InterviewPage() {
                 <span className="font-medium text-slate-700 text-xs leading-tight">Class<br />Diagram</span>
               </button>
 
+              {/* NEW: Changed disabled condition to match base diagrams so it's always clickable when the interview is saturated */}
               <button
                 onClick={handleGenerateActivity}
-                disabled={!canGenerateDependentDiagrams || umlLoading.activity}
-                title={!canGenerateDependentDiagrams ? 'Generate Use Case and Class first.' : ''}
+                disabled={!canGenerateBaseDiagrams || umlLoading.activity}
+                title={!canGenerateBaseDiagrams ? 'Generate/confirm SRS and complete interview first.' : ''}
                 className={`${buttonBaseClass} bg-emerald-50/60 hover:bg-emerald-100/80 hover:border-emerald-200`}
               >
                 <div className="text-emerald-600">
@@ -665,47 +639,6 @@ export default function InterviewPage() {
                 </div>
                 <span className="font-medium text-slate-700 text-xs leading-tight">Activity<br />Diagram</span>
               </button>
-
-              <button
-                onClick={handleGenerateSequence}
-                disabled={!canGenerateDependentDiagrams || umlLoading.sequence || selectedUsecaseIdx === null}
-                title={!canGenerateDependentDiagrams ? 'Generate Use Case and Class first.' : ''}
-                className={`${buttonBaseClass} bg-indigo-50/70 hover:bg-indigo-100/80 hover:border-indigo-200`}
-              >
-                <div className="text-indigo-600">
-                  {umlLoading.sequence ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h18M3 12h18M3 19h18" />
-                    </svg>
-                  )}
-                </div>
-                <span className="font-medium text-slate-700 text-xs leading-tight">Sequence<br />Diagram</span>
-              </button>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-xs text-slate-600 mb-1">Sequence Use Case</label>
-              <select
-                value={selectedUsecaseIdx ?? ''}
-                onChange={(e) => setSelectedUsecaseIdx(e.target.value === '' ? null : Number(e.target.value))}
-                disabled={sequenceOptions.length === 0}
-                className="w-full h-9 px-2 rounded-lg border border-slate-200 text-xs bg-white disabled:bg-slate-50"
-              >
-                {sequenceOptions.length === 0 ? (
-                  <option value="">Generate Use Case first</option>
-                ) : (
-                  sequenceOptions.map((option) => (
-                    <option key={option.idx} value={option.idx}>
-                      {option.idx}: {option.name}
-                    </option>
-                  ))
-                )}
-              </select>
             </div>
           </div>
         </div>
