@@ -48,13 +48,15 @@ export default function DashboardPage() {
     setDeleteConfirm(null)
   }
 
-  return (
+return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
+      {/* Pass isDashboard={true} to trigger the text rendering */}
+      <Navbar isDashboard={true} />
+      
       <main className="max-w-[90rem] mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{t('projects')}</h1>
+            <h3 className="text-2xl font-bold text-slate-900">{t('projects')}</h3>
             <p className="text-slate-500 text-sm mt-1">
               {projects.length} {projects.length !== 1 ? t('projects_plural') : t('project_singular')}
             </p>
