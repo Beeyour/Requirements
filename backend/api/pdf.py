@@ -11,6 +11,7 @@ from backend.models.project import Project
 from io import BytesIO
 import tempfile
 import os
+import requests
 from typing import Dict, Any
 
 router = APIRouter()
@@ -32,28 +33,39 @@ except ImportError:
 
 def _get_requirements_content(project_id: int, db: Session) -> Dict[str, Any]:
     """Fetch and format requirements for PDF."""
+    print(f"Fetching requirements for project {project_id}")
     requirements = requirement_service.get_project_requirements(db, project_id, False)
+    print(f"Found {len(requirements)} total requirements")
     
-    functional = [req for req in requirements if req.type == 'functional' and req.is_active]
-    non_functional = [req for req in requirements if req.type == 'non_functional' and req.is_active]
+    functional = [req for req in requirements if req.type == 'Functional' and req.is_active]
+    non_functional = [req for req in requirements if req.type == 'Non-Functional' and req.is_active]
+    
+    print(f"Found {len(functional)} functional and {len(non_functional)} non-functional requirements")
+    
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
     
     return {
         'functional': functional,
         'non_functional': non_functional,
-        'project_name': db.query(Project).filter(Project.id == project_id).first().app_name
+        'project_name': project.app_name
     }
 
 
 def _download_svg_as_temp_file(svg_url: str) -> str:
     """Download SVG and convert to temporary PNG file for PDF inclusion."""
-    import requests
-    from svglib.svglib import svg2rlg
-    from reportlab.graphics import renderPM
-    
     try:
+        print(f"Downloading SVG from: {svg_url}")
         # Download SVG
-        response = requests.get(svg_url)
+        response = requests.get(svg_url, timeout=30)
         response.raise_for_status()
+        
+        if not response.content:
+            print("Empty SVG content received")
+            return None
+            
+        print(f"Downloaded {len(response.content)} bytes of SVG content")
         
         # Convert SVG to ReportLab drawing
         drawing = svg2rlg(BytesIO(response.content))
@@ -61,12 +73,15 @@ def _download_svg_as_temp_file(svg_url: str) -> str:
         # Create temporary file
         temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
         
-        # Render as PNG
-        renderPM.drawToFile(drawing, temp_file.name, fmt='PNG')
+        # Render as PNG with higher DPI for better quality
+        renderPM.drawToFile(drawing, temp_file.name, fmt='PNG', dpi=150)
         
+        print(f"Successfully converted SVG to PNG: {temp_file.name}")
         return temp_file.name
     except Exception as e:
-        print(f"Error converting SVG: {e}")
+        print(f"Error converting SVG from {svg_url}: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -109,8 +124,11 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
     if content_data['functional']:
         story.append(Paragraph("1. Functional Requirements", heading_style))
         for i, req in enumerate(content_data['functional'], 1):
-            story.append(Paragraph(f"<b>{i}. {req.title}</b>", styles['Normal']))
-            story.append(Paragraph(f"{req.description}", styles['Normal']))
+            # Handle both ORM objects and dictionaries
+            req_title = getattr(req, 'title', None) or req.get('description', f'Functional Requirement {i}')
+            req_desc = getattr(req, 'description', None) or req.get('description', 'No description available')
+            story.append(Paragraph(f"<b>{i}. {req_title}</b>", styles['Normal']))
+            story.append(Paragraph(f"{req_desc}", styles['Normal']))
             story.append(Spacer(1, 12))
         story.append(Spacer(1, 20))
     
@@ -118,8 +136,11 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
     if content_data['non_functional']:
         story.append(Paragraph("2. Non-Functional Requirements", heading_style))
         for i, req in enumerate(content_data['non_functional'], 1):
-            story.append(Paragraph(f"<b>{i}. {req.title}</b>", styles['Normal']))
-            story.append(Paragraph(f"{req.description}", styles['Normal']))
+            # Handle both ORM objects and dictionaries
+            req_title = getattr(req, 'title', None) or req.get('description', f'Non-Functional Requirement {i}')
+            req_desc = getattr(req, 'description', None) or req.get('description', 'No description available')
+            story.append(Paragraph(f"<b>{i}. {req_title}</b>", styles['Normal']))
+            story.append(Paragraph(f"{req_desc}", styles['Normal']))
             story.append(Spacer(1, 12))
         story.append(Spacer(1, 20))
     
@@ -150,29 +171,47 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
     
     # 3. Class Diagram
     try:
+        print("Looking for Class diagram...")
         class_diagram = get_cached_diagram(db, class_digram_service.ClassDiagram, project_id)
-        if class_diagram and class_diagram.svg_url:
-            add_diagram("3. Class Diagram", class_diagram.svg_url, "Class")
+        print(f"Class diagram found: {class_diagram is not None}")
+        if class_diagram and class_diagram.get('svg_url'):
+            print(f"Adding Class diagram with URL: {class_diagram['svg_url']}")
+            add_diagram("3. Class Diagram", class_diagram['svg_url'], "Class")
+        else:
+            print("No Class diagram found or no SVG URL")
     except Exception as e:
         print(f"Error getting class diagram: {e}")
+        import traceback
+        traceback.print_exc()
     
     # 4. Use Case Diagram
     try:
+        print("Looking for Use Case diagram...")
         usecase_diagram = get_cached_diagram(db, usecase_service.UseCaseDiagram, project_id)
-        if usecase_diagram and usecase_diagram.svg_url:
-            add_diagram("4. Use Case Diagram", usecase_diagram.svg_url, "Use Case")
+        print(f"Use Case diagram found: {usecase_diagram is not None}")
+        if usecase_diagram and usecase_diagram.get('svg_url'):
+            print(f"Adding Use Case diagram with URL: {usecase_diagram['svg_url']}")
+            add_diagram("4. Use Case Diagram", usecase_diagram['svg_url'], "Use Case")
+        else:
+            print("No Use Case diagram found or no SVG URL")
     except Exception as e:
         print(f"Error getting use case diagram: {e}")
+        import traceback
+        traceback.print_exc()
     
     # 5. Sequence Diagrams (Loop through all use cases)
     try:
+        print("Looking for Sequence diagrams...")
         sequence_diagrams = get_all_sequence_diagrams(db, project_id)
+        print(f"Found {len(sequence_diagrams) if sequence_diagrams else 0} sequence diagrams")
         if sequence_diagrams:
             story.append(Paragraph("5. Sequence Diagrams", heading_style))
             for i, seq_diagram in enumerate(sequence_diagrams, 1):
-                if seq_diagram.svg_url:
+                print(f"Processing sequence diagram {i}: usecase_idx={getattr(seq_diagram, 'usecase_idx', 'unknown')}")
+                svg_url = getattr(seq_diagram, 'svg_url', None)
+                if svg_url:
                     story.append(Paragraph(f"5.{i} Sequence Diagram for Use Case {seq_diagram.usecase_idx}", styles['Heading3']))
-                    temp_file = _download_svg_as_temp_file(seq_diagram.svg_url)
+                    temp_file = _download_svg_as_temp_file(svg_url)
                     if temp_file:
                         img = Image(temp_file, width=6*inch, height=4*inch)
                         img.hAlign = 'CENTER'
@@ -182,17 +221,30 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
                     else:
                         story.append(Paragraph(f"[Sequence diagram {seq_diagram.usecase_idx} could not be rendered]", styles['Normal']))
                         story.append(Spacer(1, 15))
+                else:
+                    print(f"No SVG URL for sequence diagram {i}")
             story.append(Spacer(1, 20))
+        else:
+            print("No sequence diagrams found")
     except Exception as e:
         print(f"Error getting sequence diagrams: {e}")
+        import traceback
+        traceback.print_exc()
     
     # 6. Activity Diagram
     try:
+        print("Looking for Activity diagram...")
         activity_diagram = get_cached_diagram(db, activity_digram_service.ActivityDiagram, project_id)
-        if activity_diagram and activity_diagram.svg_url:
-            add_diagram("6. Activity Diagram", activity_diagram.svg_url, "Activity")
+        print(f"Activity diagram found: {activity_diagram is not None}")
+        if activity_diagram and activity_diagram.get('svg_url'):
+            print(f"Adding Activity diagram with URL: {activity_diagram['svg_url']}")
+            add_diagram("6. Activity Diagram", activity_diagram['svg_url'], "Activity")
+        else:
+            print("No Activity diagram found or no SVG URL")
     except Exception as e:
         print(f"Error getting activity diagram: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Build PDF
     doc.build(story)

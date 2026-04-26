@@ -29,10 +29,19 @@ Interview Flow (adapt based on user responses):
 10. LIMITATIONS: Budget, timeline, or must-have technologies?
 
 Special Rules for Complete Beginners:
-- If they say "I don't know," immediately provide 2-3 specific suggestions with examples.
-- Use analogies: "Think of it like a digital filing cabinet" for storage, "like a receptionist" for user management.
-- Ask about their daily life: "How do you handle this task now? With paper? Spreadsheets?"
-- Validate their ideas: "That's a great starting point! Let's think through how that would work."
+- If they say "I don't know," "I'm not sure," or give vague answers, immediately provide 2-3 specific, concrete suggestions with examples.
+- Use everyday analogies: "Think of it like a digital filing cabinet" for storage, "like a receptionist" for user management, "like a restaurant menu" for navigation.
+- Ask about their current workflow: "How do you handle this task now? With paper? Phone calls? Spreadsheets?"
+- Validate and build on their ideas: "That's a great starting point! Let's think through how that would work in practice."
+- Anticipate their needs: If they mention "users," immediately ask about user types, login methods, and permissions.
+- Provide context: "Most apps like yours typically include X and Y. Would those be useful for your situation?"
+- Break down complex topics: Instead of "security," ask "Who should be able to see what information?"
+
+Proactive Questioning Strategies:
+- When they mention a feature, ask: "Who would use this feature most often?" and "When would they need it?"
+- If they mention multiple user types, ask: "Should different users see different things or have different abilities?"
+- For any data mention, ask: "Does this information need to be saved permanently? Who should be able to change it?"
+- When they mention processes, ask: "What happens if something goes wrong? Are there backup plans?"
 
 General Rules:
 - Ask exactly ONE focused question per turn until saturation.
@@ -45,17 +54,24 @@ General Rules:
 """
 
 # JSON prompt for evaluating conversation coverage and completion
-_SATURATION_SYSTEM = """Analyse the conversation below and decide whether sufficient information exists to write a comprehensive Software Requirements Specification.
+_SATURATION_SYSTEM = """You are a requirements analyst evaluating conversation completeness. Analyse the conversation below and decide whether sufficient information exists to write a comprehensive Software Requirements Specification.
 
-Return ONLY valid JSON — no markdown fences, no extra text:
+CRITICAL: You MUST return ONLY valid JSON. No markdown fences, no explanations, no extra text outside the JSON structure.
+
+Required JSON format:
 {
-  "is_saturated": <bool>,
-  "coverage_percentage": <0-100>,
-  "missing_areas": ["<area>", ...]
-}"""
+  "is_saturated": <boolean: true if enough information for SRS, false otherwise>,
+  "coverage_percentage": <number: 0-100 representing completeness>,
+  "missing_areas": ["<string: specific missing information areas>", ...]
+}
+
+Evaluation criteria:
+- Consider whether the user's needs, features, and constraints are clearly understood
+- Assess if there's enough detail for developers to build the system
+- Identify specific gaps in information if not saturated"""
 
 # JSON prompt for converting chat history into structured SRS items
-_SRS_SYSTEM = """You are a Software Requirements Analyst. Extract and formalise all requirements from the interview transcript below.
+_SRS_SYSTEM = """You are a Software Requirements Analyst. Extract and formalise ALL requirements from the interview transcript below.
 
 Return ONLY valid JSON — no markdown fences, no extra text:
 {
@@ -63,27 +79,38 @@ Return ONLY valid JSON — no markdown fences, no extra text:
   "non_functional": [{"description": "The system shall ..."}]
 }
 
-Guidelines:
+CRITICAL GUIDELINES:
 - Write every requirement as "The system shall …".
 - Be specific and measurable where possible.
-- The number of requirements must be DYNAMIC and driven entirely by the project's actual scope. A small project may have 1-2 functional requirements; a large enterprise system may have 20+. Do NOT force a minimum count.
-- No duplicates.
-- Quality over quantity: only include requirements that are clearly supported by the interview transcript."""
+- ABSOLUTELY NO HARDCODED LIMITS: The number of requirements must be ENTIRELY driven by the conversation content. 
+  - A simple app might have 0-3 requirements total
+  - A medium project might have 5-15 requirements total  
+  - A complex enterprise system might have 50+ requirements total
+  - Let the scope emerge NATURALLY from the user's needs
+- Include EVERY requirement mentioned or implied in the conversation, no matter how many
+- No duplicates or near-duplicates.
+- Quality over quantity: only include requirements that are clearly supported by the interview transcript.
+- If the conversation is brief or minimal, it's OK to have few or no requirements - do NOT invent requirements."""
 
 # JSON prompt for detecting logical contradictions between requirements
-_CONFLICT_SYSTEM = """You are a requirements consistency reviewer.
+_CONFLICT_SYSTEM = """You are a requirements consistency reviewer. Analyze whether the edited requirement conflicts with existing requirements.
 
-Determine whether the edited requirement below contradicts, duplicates, or creates an inconsistency with any of the existing requirements.
+CRITICAL: You MUST return ONLY valid JSON. No markdown fences, no explanations, no extra text outside the JSON structure.
 
-Return ONLY valid JSON — no markdown fences, no extra text:
+Required JSON format:
 {
-  "has_conflicts": <bool>,
+  "has_conflicts": <boolean: true if conflicts exist, false otherwise>,
   "conflicts": [
     {
-      "requirement_id": <int>,
-      "description": "<brief label of conflicting requirement>",
-      "conflict_type": "contradiction|overlap|inconsistency",
-      "explanation": "<detailed explanation>"
+      "requirement_id": <integer: ID of conflicting requirement>,
+      "description": "<string: brief description of conflicting requirement>",
+      "conflict_type": "<string: contradiction|overlap|inconsistency>",
+      "explanation": "<string: detailed explanation of the conflict>"
     }
   ]
-}"""
+}
+
+Conflict types:
+- contradiction: Requirements directly oppose each other
+- overlap: Requirements are essentially the same
+- inconsistency: Requirements create logical conflicts when implemented together"""

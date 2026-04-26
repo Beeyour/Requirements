@@ -61,8 +61,16 @@ export default function DiagramViewerPage() {
 
         const { data } = await apiClient.get(endpoint)
         
+        // Fetch the actual SVG content from the URL
         if (data.svg_url) {
-          setDiagramSvg(data.svg_url)
+          try {
+            const svgResponse = await fetch(data.svg_url)
+            const svgContent = await svgResponse.text()
+            setDiagramSvg(svgContent)
+          } catch (svgError) {
+            console.error('Failed to fetch SVG content:', svgError)
+            setError('Failed to load diagram content')
+          }
         }
         
         // Store use cases for interactive navigation
@@ -87,29 +95,100 @@ export default function DiagramViewerPage() {
     if (diagramType !== 'usecase') return
 
     const target = event.target
-    if (target.tagName === 'ellipse' || target.tagName === 'text') {
-      // Try to find the use case name from the text or parent element
-      let useCaseName = ''
-      let useCaseIndex = -1
+    console.log('SVG clicked:', target.tagName, target.textContent?.trim())
+    
+    // Find the use case name using multiple strategies
+    let useCaseName = ''
+    let useCaseIndex = -1
 
-      if (target.tagName === 'text') {
-        useCaseName = target.textContent?.trim()
-      } else if (target.tagName === 'ellipse') {
-        // Look for the associated text element
-        const parent = target.parentElement
-        const textElement = parent?.querySelector('text')
-        useCaseName = textElement?.textContent?.trim()
+    // Strategy 1: Direct text click
+    if (target.tagName === 'text') {
+      useCaseName = target.textContent?.trim()
+      console.log('Direct text found:', useCaseName)
+    }
+    // Strategy 2: Ellipse click - find associated text
+    else if (target.tagName === 'ellipse') {
+      // Look for text in the same group or nearby
+      const parent = target.parentElement
+      if (parent) {
+        const textElement = parent.querySelector('text')
+        if (textElement) {
+          useCaseName = textElement.textContent?.trim()
+          console.log('Ellipse associated text found:', useCaseName)
+        }
       }
+      
+      // Fallback: look for text elements near the ellipse
+      if (!useCaseName) {
+        const allTexts = document.querySelectorAll('text')
+        const targetRect = target.getBoundingClientRect()
+        
+        for (const textElement of allTexts) {
+          const textRect = textElement.getBoundingClientRect()
+          // Check if text is close to ellipse (within 50px)
+          const distance = Math.sqrt(
+            Math.pow(targetRect.left - textRect.left, 2) + 
+            Math.pow(targetRect.top - textRect.top, 2)
+          )
+          if (distance < 50) {
+            useCaseName = textElement.textContent?.trim()
+            console.log('Nearby text found:', useCaseName)
+            break
+          }
+        }
+      }
+    }
+    // Strategy 3: Path or other element click - traverse up to find text
+    else if (target.tagName === 'path' || target.tagName === 'g') {
+      const textElement = target.querySelector('text') || 
+                        target.parentElement?.querySelector('text')
+      if (textElement) {
+        useCaseName = textElement.textContent?.trim()
+        console.log('Path/Group associated text found:', useCaseName)
+      }
+    }
 
-      // Find the use case index
-      const foundIndex = useCases.findIndex(name => 
-        name.toLowerCase().includes(useCaseName.toLowerCase()) ||
-        useCaseName.toLowerCase().includes(name.toLowerCase())
-      )
+    // Clean up the use case name
+    if (useCaseName) {
+      // Remove common prefixes/suffixes and clean
+      useCaseName = useCaseName.replace(/^use case\s*/i, '').trim()
+      console.log('Cleaned use case name:', useCaseName)
+    }
 
+    // Find the use case index with fuzzy matching
+    if (useCaseName && useCases.length > 0) {
+      console.log('Searching for use case:', useCaseName, 'in:', useCases)
+      
+      const foundIndex = useCases.findIndex(name => {
+        const nameStr = name.toString().toLowerCase()
+        const useCaseStr = useCaseName.toLowerCase()
+        
+        // Exact match
+        if (nameStr === useCaseStr) return true
+        
+        // Contains match
+        if (nameStr.includes(useCaseStr) || useCaseStr.includes(nameStr)) return true
+        
+        // Word boundary match
+        const nameWords = nameStr.split(/\s+/)
+        const useCaseWords = useCaseStr.split(/\s+/)
+        
+        // Check if any words match
+        return nameWords.some(word => 
+          word.length > 3 && useCaseWords.some(uw => uw.includes(word) || word.includes(uw))
+        )
+      })
+
+      console.log('Found index:', foundIndex)
+      
       if (foundIndex !== -1) {
+        console.log('Navigating to sequence diagram for use case:', foundIndex)
         navigate(`/project/${projectId}/diagram/sequence?usecase_idx=${foundIndex}`)
+      } else {
+        console.log('Use case not found:', useCaseName)
       }
+    } else {
+      console.log('No use case name detected')
     }
   }
 
