@@ -114,4 +114,6 @@ Required JSON format:
 Conflict types:
 - contradiction: Requirements directly oppose each other
 - overlap: Requirements are essentially the same
-- inconsistency: Requirements create logical conflicts when implemented together"""
+- inconsistency: Requirements create logical conflicts when implemented together
+- limitation: check only the Requirements basis if its conflict with each other
+"""

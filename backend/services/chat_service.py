@@ -64,10 +64,10 @@ async def process_chat_message(db: Session, project: Project, content: str):
     # 2. Prepare context
     all_msgs = get_active_history(db, project.id)
     context = [{"role": m.role, "content": m.content} for m in all_msgs]
-    
+
     # 3. Get AI JSON-structured response (using recent context for efficiency)
     ai_resp = await get_interview_response(
-        context[-10:], 
+        context[:], 
         project.app_name, 
         project.model_provider, 
         project.model_name
