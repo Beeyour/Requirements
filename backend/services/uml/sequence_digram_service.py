@@ -128,6 +128,7 @@ async def generate_sequence(
         plantuml_code=plantuml_code,
         data=data,
         usecase_id=usecase_id,
+        usecase_idx=usecase_idx,
     )
 
     return {"svg_url": svg_url, "plantuml_code": plantuml_code, "data": data}

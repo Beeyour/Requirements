@@ -26,6 +26,29 @@ def get_project_requirements(db: Session, project_id: int, include_inactive: boo
         query = query.filter(Requirement.is_active == True)
     return query.order_by(Requirement.type, Requirement.id).all()
 
+async def archive_existing_requirements(db: Session, project_id: int) -> None:
+    """Archive all existing active requirements for a project."""
+    # Mark all existing active requirements as inactive
+    db.query(Requirement).filter(
+        Requirement.project_id == project_id,
+        Requirement.is_active == True
+    ).update({"is_active": False})
+    
+    # Log the archival for each requirement
+    archived_reqs = db.query(Requirement).filter(
+        Requirement.project_id == project_id,
+        Requirement.is_active == False
+    ).all()
+    
+    for req in archived_reqs:
+        db.add(RequirementLog(
+            requirement_id=req.id,
+            change_reason="Requirements update - archived during regeneration",
+            timestamp=datetime.now(timezone.utc)
+        ))
+    
+    db.commit()
+
 async def generate_srs_from_chat(db: Session, project: Project) -> List[Requirement]:
     # Extracts active chat history and uses AI to structure requirements (Async)
     messages = db.query(ConversationHistory).filter(
@@ -36,8 +59,14 @@ async def generate_srs_from_chat(db: Session, project: Project) -> List[Requirem
     if not messages:
         raise HTTPException(status_code=400, detail="No conversation history available")
 
-    # Map database models to basic dictionary format
-    conversation = [{"role": m.role, "content": m.content} for m in messages]
+    # Map database models to basic dictionary format with role distinction
+    conversation = []
+    for m in messages:
+        role_label = "Interviewer (AI)" if m.role == "assistant" else "Client (User)"
+        conversation.append({
+            "role": m.role,
+            "content": f"[{role_label}]: {m.content}"
+        })
 
     # Trigger AI generation (Already converted to async in our previous steps)
     generated = await generate_requirements_from_conversation(

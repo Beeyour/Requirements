@@ -37,15 +37,20 @@ class OpenAIAdapter(BaseLLMAdapter):
 
         try:
 
+            kwargs = {}
+            if is_json:
+                kwargs["response_format"] = {"type": "json_object"}
+                # Ensure the prompt mentions JSON so OpenAI doesn't reject the request
+                if system_prompt and "json" not in system_prompt.lower():
+                    input_messages[0]["content"] += "\n\nYou MUST respond with valid JSON only."
+
             if self._is_new_model(model):
 
                 response = await self.client.chat.completions.create(
                     model=model,
                     messages=input_messages,
                     temperature=temperature,
-                    # قم بمسح السطر الخاص بـ max_completion_tokens 
-                    # واستبدله بهذا السطر:
-                    extra_body={"max_completion_tokens": max_tokens},
+                    extra_body={"max_completion_tokens": max_tokens, **({} if not kwargs else {"response_format": kwargs.get("response_format")})},
                 )
 
                 return response.choices[0].message.content
@@ -56,7 +61,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                     messages=input_messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
-                    # response_format={"type": "json_object"} if is_json else None
+                    **kwargs,
                 )
 
                 return response.choices[0].message.content

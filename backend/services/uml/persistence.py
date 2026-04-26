@@ -86,3 +86,62 @@ def get_ssot_context(db: Session, project_id: int) -> tuple[Optional[dict], Opti
     usecase_data = get_latest_diagram(db, UseCaseDiagram, project_id)
     class_data = get_latest_diagram(db, ClassDiagram, project_id)
     return usecase_data, class_data
+
+
+def get_cached_diagram(db: Session, model_class: Type, project_id: int, **filters) -> Optional[dict]:
+    """Return the standard API response dict if a diagram is cached, else None.
+
+    Checks the latest diagram record matching the filters. If found, returns
+    {"svg_url": ..., "plantuml_code": ..., "data": ...} directly.
+
+    Args:
+        db: SQLAlchemy session
+        model_class: Diagram model class
+        project_id: Project ID
+        **filters: Extra filters (e.g., usecase_id for SequenceDiagram)
+
+    Returns:
+        The cached response dict or None
+    """
+    query = db.query(model_class).filter_by(project_id=project_id)
+    for key, value in filters.items():
+        query = query.filter(getattr(model_class, key) == value)
+    record = query.order_by(model_class.created_at.desc()).first()
+    if record and record.svg_url and record.parsed_data:
+        return {
+            "svg_url": record.svg_url,
+            "plantuml_code": record.plantuml_code,
+            "data": record.parsed_data,
+        }
+    return None
+
+
+def get_latest_sequence_by_usecase_idx(
+    db: Session, project_id: int, usecase_idx: int
+) -> Optional[dict]:
+    """Return cached sequence diagram for a specific use case index.
+
+    Directly filters by project_id and usecase_idx for unique identification.
+
+    Returns:
+        The cached response dict or None
+    """
+    return get_cached_diagram(db, SequenceDiagram, project_id, usecase_idx=usecase_idx)
+
+
+def get_all_sequence_diagrams(db: Session, project_id: int) -> list:
+    """Return all sequence diagrams for a project, ordered by usecase_idx.
+
+    Args:
+        db: SQLAlchemy session
+        project_id: Project ID
+
+    Returns:
+        List of SequenceDiagram ORM records
+    """
+    return (
+        db.query(SequenceDiagram)
+        .filter_by(project_id=project_id)
+        .order_by(SequenceDiagram.usecase_idx.asc())
+        .all()
+    )

@@ -23,6 +23,24 @@ def parse_json_response(raw_text: str) -> Dict[str, Any]:
             "missing_areas": [],
         }
 
+
+def _build_interview_message(parsed: Dict[str, Any]) -> str:
+    """Build the display message from parsed JSON, with fallback."""
+    ack = (parsed.get("acknowledgment") or "").strip()
+    question = (parsed.get("question") or "").strip()
+    if ack and question:
+        return f"{ack}\n\n{question}"
+    if ack or question:
+        return ack or question
+    # Both empty — return a safe fallback question
+    return "Could you tell me more about what you'd like the system to do?"
+
+
+DEFAULT_RETRY_QUESTION = (
+    "I'd like to understand your project better. "
+    "Could you describe the main purpose of the application and who will use it?"
+)
+
 async def get_initial_greeting(app_name: str, provider: str, model: str) -> str:
     # Triggers the first question of the interview
     raw = await call_llm(
@@ -31,13 +49,25 @@ async def get_initial_greeting(app_name: str, provider: str, model: str) -> str:
         [{"role": "user", "content": f"I want to build a software application called '{app_name}'. Please start the requirements interview."}],
         temperature=0.7,
         max_tokens=400,
+        is_json=True,
     )
     parsed = parse_json_response(raw)
-    ack = (parsed.get("acknowledgment") or "").strip()
-    question = (parsed.get("question") or "").strip()
-    if ack and question:
-        return f"{ack}\n\n{question}"
-    return ack or question or "Let's start. What is the core purpose of your application?"
+    message = _build_interview_message(parsed)
+
+    # Retry once if the message is the fallback (both ack and question were empty)
+    if message == DEFAULT_RETRY_QUESTION:
+        raw = await call_llm(
+            provider, model,
+            _INTERVIEW_SYSTEM,
+            [{"role": "user", "content": f"I want to build a software application called '{app_name}'. Please start the requirements interview."}],
+            temperature=0.5,
+            max_tokens=400,
+            is_json=True,
+        )
+        parsed = parse_json_response(raw)
+        message = _build_interview_message(parsed)
+
+    return message or "Let's start. What is the core purpose of your application?"
 
 async def get_interview_response(
     conversation_history: List[Dict[str, str]],
@@ -52,14 +82,23 @@ async def get_interview_response(
         list(conversation_history),
         temperature=0.7,
         max_tokens=500,
+        is_json=True,
     )
     parsed = parse_json_response(raw)
-    ack = (parsed.get("acknowledgment") or "").strip()
-    question = (parsed.get("question") or "").strip()
-    if ack and question:
-        message = f"{ack}\n\n{question}"
-    else:
-        message = ack or question
+    message = _build_interview_message(parsed)
+
+    # Retry once if both ack and question were empty
+    if message == DEFAULT_RETRY_QUESTION:
+        raw = await call_llm(
+            provider, model,
+            _INTERVIEW_SYSTEM,
+            list(conversation_history),
+            temperature=0.5,
+            max_tokens=500,
+            is_json=True,
+        )
+        parsed = parse_json_response(raw)
+        message = _build_interview_message(parsed)
 
     is_saturated = bool(parsed.get("is_saturated", False))
     return {
@@ -79,5 +118,6 @@ async def check_saturation(
         [{"role": "user", "content": f"Conversation history for evaluation:\n{json.dumps(conversation_history)}"}],
         temperature=0.1,
         max_tokens=300,
+        is_json=True,
     )
     return parse_json_response(raw)

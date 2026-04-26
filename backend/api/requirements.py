@@ -42,6 +42,22 @@ def get_requirements(
     # Fetches requirements directly from the database
     return requirement_service.get_project_requirements(db, project_id, include_inactive)
 
+@router.post("/update-requirements/{project_id}", response_model=List[RequirementResponse])
+async def update_requirements(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Regenerate/update all requirements for a project from chat history."""
+    # Verify project ownership before triggering the AI SRS regeneration
+    project = requirement_service.get_project_or_403(db, project_id, current_user.id)
+    
+    # Archive existing requirements and regenerate from chat history
+    await requirement_service.archive_existing_requirements(db, project_id)
+    
+    # Generate new requirements from the current chat history
+    return await requirement_service.generate_srs_from_chat(db, project)
+
 @router.put("/update-requirement/{requirement_id}", response_model=UpdateRequirementResponse)
 async def update_requirement(
     requirement_id: int,

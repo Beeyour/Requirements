@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import InterviewPage from './pages/InterviewPage'
 import SRSPage from './pages/SRSPage'
+import DiagramViewerPage from './pages/DiagramViewerPage'
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/project/:id/interview" element={<InterviewPage />} />
             <Route path="/project/:id/srs" element={<SRSPage />} />
+            <Route path="/project/:id/diagram/:type" element={<DiagramViewerPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
