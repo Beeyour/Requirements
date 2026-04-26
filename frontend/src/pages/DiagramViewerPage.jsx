@@ -99,7 +99,6 @@ export default function DiagramViewerPage() {
     
     // Find the use case name using multiple strategies
     let useCaseName = ''
-    let useCaseIndex = -1
 
     // Strategy 1: Direct text click
     if (target.tagName === 'text') {
@@ -285,13 +284,13 @@ export default function DiagramViewerPage() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6">
+        <div className="w-full mx-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+            <div className="p-6 overflow-auto">
               {diagramSvg ? (
                 <div 
                   ref={svgContainerRef}
-                  className={`w-full h-auto ${diagramType === 'usecase' ? 'cursor-pointer' : ''}`}
+                  className={`min-w-max flex justify-center ${diagramType === 'usecase' ? 'cursor-pointer' : ''}`}
                   onClick={handleSvgClick}
                   dangerouslySetInnerHTML={{ __html: diagramSvg }}
                 />
