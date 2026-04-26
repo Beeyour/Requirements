@@ -11,7 +11,7 @@ const resources = {
             "dashboard": "Dashboard",
             "srs_analyst": "SRS Analyst",
             "sign_out": "Sign out",
-            "change_language": "عربي",
+            "change_language": "AR",
 
             // Dashboard Page
             "projects": "Projects",
@@ -114,7 +114,7 @@ const resources = {
             "dashboard": "لوحة القيادة",
             "srs_analyst": "محلل SRS",
             "sign_out": "تسجيل خروج",
-            "change_language": "English",
+            "change_language": "EN",
 
             // Dashboard Page
             "projects": "المشاريع",
@@ -163,7 +163,7 @@ const resources = {
             "edit_req_btn_title": "تعديل المتطلب",
 
             // Interview Page
-            "model_label": "النموذج:",
+            "model_label": "النموذج",
             "change_btn": "تغيير",
             "info_complete": "اكتمل جمع المعلومات.",
             "ready_generate": "جاهز لإنشاء مستند SRS الخاص بك.",
