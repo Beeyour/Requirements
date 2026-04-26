@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
+// Import the logo. Adjust the relative path if your Navbar isn't in a sibling folder to imgs
+import logo from '../imgs/logo.png'
 
 export default function Navbar({ projectName }) {
   const { user, logout } = useAuth()
@@ -25,8 +27,12 @@ export default function Navbar({ projectName }) {
       
       {/* LEFT: Logo + H1 Title */}
       <div className="flex items-center gap-4">
-        <Link to="/" className="font-bold text-brand-600 text-lg tracking-tight hover:text-brand-700 transition-colors">
-          {t('srs_analyst', 'SRS Analyst')}
+        <Link to="/" className="hover:opacity-80 transition-opacity">
+          <img 
+            src={logo} 
+            alt={t('srs_analyst', 'SRS Analyst Logo')} 
+            className="h-8 w-auto object-contain" 
+          />
         </Link>
         
         {/* A subtle vertical divider between logo and title */}
