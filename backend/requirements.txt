@@ -20,3 +20,4 @@ websockets
 pytest-asyncio
 google.generativeai
 plantuml
+reportlab
