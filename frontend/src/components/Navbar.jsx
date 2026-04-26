@@ -43,7 +43,7 @@ export default function Navbar({ projectName }) {
         {/* Translate Button: Pill shape, blue border, fills blue on hover */}
         <button
           onClick={toggleLanguage}
-          className="px-4 py-1.5 text-sm font-medium text-brand-600 border border-brand-500 rounded-full hover:bg-brand-600 hover:text-white transition-all duration-200"
+          className="px-4 py-1.5 text-sm font-medium text-brand-600 rounded-full hover:bg-brand-600 hover:text-white transition-all duration-200"
         >
           {t('change_language', 'عربي')}
         </button>
