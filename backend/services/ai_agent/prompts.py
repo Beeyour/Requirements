@@ -87,6 +87,7 @@ CRITICAL GUIDELINES:
   - A medium project might have 5-15 requirements total  
   - A complex enterprise system might have 50+ requirements total
   - Let the scope emerge NATURALLY from the user's needs
+- Every each requirements must NOT HAVE CONFLICT with each other
 - Include EVERY requirement mentioned or implied in the conversation, no matter how many
 - No duplicates or near-duplicates.
 - Quality over quantity: only include requirements that are clearly supported by the interview transcript.
