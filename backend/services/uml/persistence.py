@@ -121,16 +121,12 @@ def get_latest_sequence_by_usecase_idx(
 ) -> Optional[dict]:
     """Return cached sequence diagram for a specific use case index.
 
-    Looks up the UseCaseDiagram record, then finds the most recent
-    SequenceDiagram linked to it via usecase_id.
+    Directly filters by project_id and usecase_idx for unique identification.
 
     Returns:
         The cached response dict or None
     """
-    usecase_record = get_latest_diagram_record(db, UseCaseDiagram, project_id)
-    if not usecase_record:
-        return None
-    return get_cached_diagram(db, SequenceDiagram, project_id, usecase_id=usecase_record.id)
+    return get_cached_diagram(db, SequenceDiagram, project_id, usecase_idx=usecase_idx)
 
 
 def get_all_sequence_diagrams(db: Session, project_id: int) -> list:

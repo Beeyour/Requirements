@@ -7,6 +7,13 @@ from backend.models.uml.mixin import UmlMixin
 class SequenceDiagram(UmlMixin, Base):
     __tablename__ = "sequence_diagrams"
 
+    usecase_idx = Column(
+        Integer,
+        index=True,
+        nullable=False,
+        comment="Index of the use case in the use case diagram (0-based)"
+    )
+
     usecase_id = Column(
         Integer,
         ForeignKey("usecase_diagrams.id"),

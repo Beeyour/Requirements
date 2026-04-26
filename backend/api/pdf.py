@@ -306,12 +306,31 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
     return buffer
 
 
-@router.get("/generate-pdf/{project_id}")
-async def generate_pdf(
-    project_id: int,
-    db: Session = Depends(get_db),
-):
-    """Generate comprehensive PDF report with SRS and all UML diagrams."""
+async def pdf_master_orchestrator(
+    project_id: int, 
+    db: Session,
+    force_regenerate: bool = False
+) -> Dict[str, Any]:
+    """
+    PDF Master Orchestrator - Sequentially generates and validates all components before PDF creation.
+    
+    Logic Flow:
+    1. Verify Functional and Non-Functional Requirements exist
+    2. Generate/verify Class Diagram
+    3. Generate/verify Use Case Diagram  
+    4. Generate/verify all individual Sequence Diagrams (looping through every Use Case)
+    5. Generate/verify Activity Diagram
+    6. Compile comprehensive PDF with consistent styling
+    
+    Args:
+        project_id: Project identifier
+        db: Database session
+        force_regenerate: Force regeneration of all components
+        
+    Returns:
+        Dictionary with PDF generation results and component status
+    """
+    print(f"🚀 PDF Master Orchestrator started for project {project_id}")
     
     if not REPORTLAB_AVAILABLE:
         raise HTTPException(
@@ -319,25 +338,100 @@ async def generate_pdf(
             detail="PDF generation not available. Please install reportlab: pip install reportlab"
         )
     
+    # Track component generation status
+    component_status = {
+        "requirements": False,
+        "class_diagram": False,
+        "usecase_diagram": False,
+        "sequence_diagrams": [],
+        "activity_diagram": False
+    }
+    
     try:
-        # Ensure all diagrams exist before generating PDF
-        print("Ensuring all diagrams exist before PDF generation...")
-        
-        # Generate missing diagrams
-        await _ensure_diagram_exists(db, project_id, 'usecase')
-        await _ensure_diagram_exists(db, project_id, 'class')
-        await _ensure_diagram_exists(db, project_id, 'activity')
-        
-        # Generate all sequence diagrams for use cases
-        usecase_diagram = get_cached_diagram(db, usecase_service.UseCaseDiagram, project_id)
-        if usecase_diagram and usecase_diagram.get('data', {}).get('use_cases'):
-            for i, use_case in enumerate(usecase_diagram['data']['use_cases']):
-                await _ensure_diagram_exists(db, project_id, 'sequence', i)
-        
-        # Get content data
+        # Step 1: Verify Requirements exist
+        print("📋 Step 1: Verifying requirements...")
         content_data = _get_requirements_content(project_id, db)
+        if content_data['functional'] or content_data['non_functional']:
+            component_status["requirements"] = True
+            print(f"✅ Requirements verified: {len(content_data['functional'])} functional, {len(content_data['non_functional'])} non-functional")
+        else:
+            raise ValueError("No requirements found for this project")
         
-        # Generate PDF
+        # Step 2: Generate/verify Class Diagram
+        print("🏗️ Step 2: Generating/verifying Class Diagram...")
+        if force_regenerate:
+            # Force regeneration by clearing cache
+            formatted = _get_formatted_requirements(project_id, db)
+            await class_digram_service.generate_class(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
+        
+        await _ensure_diagram_exists(db, project_id, 'class')
+        class_diagram = get_cached_diagram(db, class_digram_service.ClassDiagram, project_id)
+        if class_diagram and class_diagram.get('svg_url'):
+            component_status["class_diagram"] = True
+            print("✅ Class Diagram verified")
+        else:
+            raise ValueError("Failed to generate Class Diagram")
+        
+        # Step 3: Generate/verify Use Case Diagram
+        print("🎭 Step 3: Generating/verifying Use Case Diagram...")
+        if force_regenerate:
+            formatted = _get_formatted_requirements(project_id, db)
+            await usecase_service.generate_usecase(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
+        
+        await _ensure_diagram_exists(db, project_id, 'usecase')
+        usecase_diagram = get_cached_diagram(db, usecase_service.UseCaseDiagram, project_id)
+        if usecase_diagram and usecase_diagram.get('svg_url'):
+            component_status["usecase_diagram"] = True
+            use_cases = usecase_diagram.get('data', {}).get('use_cases', [])
+            print(f"✅ Use Case Diagram verified with {len(use_cases)} use cases")
+        else:
+            raise ValueError("Failed to generate Use Case Diagram")
+        
+        # Step 4: Generate/verify all Sequence Diagrams
+        print("🔄 Step 4: Generating/verifying all Sequence Diagrams...")
+        if use_cases:
+            for i, use_case in enumerate(use_cases):
+                print(f"   Processing sequence diagram {i+1}/{len(use_cases)}: {use_case}")
+                
+                if force_regenerate:
+                    formatted = _get_formatted_requirements(project_id, db)
+                    await sequence_digram_service.generate_sequence(db, project_id, i, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
+                
+                await _ensure_diagram_exists(db, project_id, 'sequence', i)
+                seq_diagram = get_latest_sequence_by_usecase_idx(db, project_id, i)
+                
+                if seq_diagram and seq_diagram.get('svg_url'):
+                    component_status["sequence_diagrams"].append({
+                        "usecase_idx": i,
+                        "usecase_name": use_case,
+                        "status": True,
+                        "svg_url": seq_diagram['svg_url']
+                    })
+                    print(f"   ✅ Sequence diagram {i} verified")
+                else:
+                    print(f"   ❌ Failed to generate sequence diagram {i}")
+                    component_status["sequence_diagrams"].append({
+                        "usecase_idx": i,
+                        "usecase_name": use_case,
+                        "status": False
+                    })
+        
+        # Step 5: Generate/verify Activity Diagram
+        print("⚡ Step 5: Generating/verifying Activity Diagram...")
+        if force_regenerate:
+            formatted = _get_formatted_requirements(project_id, db)
+            await activity_digram_service.generate_activity(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
+        
+        await _ensure_diagram_exists(db, project_id, 'activity')
+        activity_diagram = get_cached_diagram(db, activity_digram_service.ActivityDiagram, project_id)
+        if activity_diagram and activity_diagram.get('svg_url'):
+            component_status["activity_diagram"] = True
+            print("✅ Activity Diagram verified")
+        else:
+            raise ValueError("Failed to generate Activity Diagram")
+        
+        # Step 6: Compile comprehensive PDF
+        print("📄 Step 6: Compiling comprehensive PDF...")
         pdf_buffer = _create_pdf_content(content_data, project_id, db)
         
         # Save to temporary file
@@ -345,17 +439,56 @@ async def generate_pdf(
         temp_file.write(pdf_buffer.getvalue())
         temp_file.close()
         
-        # In a real application, you might want to upload this to a cloud storage
-        # and return a permanent URL. For now, we'll return a temp file path.
+        print(f"✅ PDF Master Orchestrator completed successfully!")
+        print(f"📊 Component Status: {component_status}")
         
         return {
+            "success": True,
             "message": "PDF generated successfully",
             "pdf_url": f"/api/temp-files/{os.path.basename(temp_file.name)}",
-            "filename": f"{content_data['project_name']}_Comprehensive_Report.pdf"
+            "filename": f"{content_data['project_name']}_Comprehensive_Report.pdf",
+            "component_status": component_status,
+            "stats": {
+                "functional_requirements": len(content_data['functional']),
+                "non_functional_requirements": len(content_data['non_functional']),
+                "sequence_diagrams": len([s for s in component_status["sequence_diagrams"] if s["status"]])
+            }
         }
         
     except Exception as e:
-        print(f"Error generating PDF: {e}")
+        print(f"❌ PDF Master Orchestrator failed: {e}")
         import traceback
         traceback.print_exc()
+        
+        return {
+            "success": False,
+            "error": str(e),
+            "component_status": component_status,
+            "message": "PDF generation failed"
+        }
+
+
+@router.get("/generate-pdf/{project_id}")
+async def generate_pdf(
+    project_id: int,
+    db: Session = Depends(get_db),
+    force: bool = Query(False, description="Force regeneration of all components"),
+):
+    """Generate comprehensive PDF report with SRS and all UML diagrams using the PDF Master Orchestrator."""
+    
+    try:
+        result = await pdf_master_orchestrator(project_id, db, force_regenerate=force)
+        
+        if result["success"]:
+            return {
+                "message": result["message"],
+                "pdf_url": result["pdf_url"],
+                "filename": result["filename"],
+                "stats": result["stats"]
+            }
+        else:
+            raise HTTPException(status_code=500, detail=result["error"])
+            
+    except Exception as e:
+        print(f"Error in PDF generation endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")

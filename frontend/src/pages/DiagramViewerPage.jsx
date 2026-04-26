@@ -106,6 +106,13 @@ export default function DiagramViewerPage() {
       const href = target.getAttribute('href')
       console.log('Intercepted PlantUML link:', href)
       
+      // Check for "Back to Use Case Diagram" button
+      if (href && href.includes('usecase')) {
+        console.log('Intercepted Back to Use Case Diagram button')
+        navigate(`/project/${projectId}/diagram/usecase`)
+        return
+      }
+      
       // Extract usecase_idx from href pattern /generate-sequence/{project_id}/{usecase_idx}
       const match = href.match(/\/generate-sequence\/\d+\/(\d+)/)
       if (match) {
@@ -290,7 +297,17 @@ export default function DiagramViewerPage() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Back to Studio Button */}
+              <button
+                onClick={() => navigate(`/project/${projectId}/interview`)}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Back to Studio
+              </button>
               {diagramType === 'usecase' && (
                 <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                   Interactive
