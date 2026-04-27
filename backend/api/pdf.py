@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.services import requirement_service
@@ -471,18 +472,13 @@ async def pdf_master_orchestrator(
         print("📄 Step 6: Compiling comprehensive PDF...")
         pdf_buffer = _create_pdf_content(content_data, project_id, db)
         
-        # Save to temporary file
-        temp_file = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
-        temp_file.write(pdf_buffer.getvalue())
-        temp_file.close()
-        
         print(f"✅ PDF Master Orchestrator completed successfully!")
         print(f"📊 Component Status: {component_status}")
         
         return {
             "success": True,
             "message": "PDF generated successfully",
-            "pdf_url": f"/api/temp-files/{os.path.basename(temp_file.name)}",
+            "pdf_buffer": pdf_buffer,
             "filename": f"{content_data['project_name']}_Comprehensive_Report.pdf",
             "component_status": component_status,
             "stats": {
@@ -511,21 +507,27 @@ async def generate_pdf(
     db: Session = Depends(get_db),
     force: bool = Query(False, description="Force regeneration of all components"),
 ):
-    """Generate comprehensive PDF report with SRS and all UML diagrams using the PDF Master Orchestrator."""
+    """Generate comprehensive PDF report with SRS and all UML diagrams.
     
+    Returns the PDF file directly as a binary stream.
+    """
     try:
         result = await pdf_master_orchestrator(project_id, db, force_regenerate=force)
         
         if result["success"]:
-            return {
-                "message": result["message"],
-                "pdf_url": result["pdf_url"],
-                "filename": result["filename"],
-                "stats": result["stats"]
-            }
+            pdf_buffer = result["pdf_buffer"]
+            pdf_buffer.seek(0)
+            filename = result["filename"]
+            return StreamingResponse(
+                pdf_buffer,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
         else:
             raise HTTPException(status_code=500, detail=result["error"])
             
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error in PDF generation endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
