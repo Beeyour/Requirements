@@ -42,9 +42,9 @@ export default function Navbar({ projectName, isDashboard }) {
         {/* A subtle vertical divider between logo and title */}
         {projectName && <div className="h-6 w-px bg-slate-300 hidden sm:block"></div>}
         
-        <h2 className="text-xl sm:text-3xl font-semibold text-slate-800 tracking-tight truncate max-w-xl">
+        <h3 className="sm:text-3xl font-semibold text-slate-800 tracking-tight truncate max-w-xl">
           {projectName}
-        </h2>
+        </h3>
       </div>
 
       {/* RIGHT: Pill Buttons & Email */}
