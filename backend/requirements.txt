@@ -21,3 +21,5 @@ pytest-asyncio
 google.generativeai
 plantuml
 reportlab
+svglib
+lxml

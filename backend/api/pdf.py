@@ -108,28 +108,42 @@ def _download_svg_as_temp_file(svg_url: str) -> str:
     """Download SVG and convert to temporary PNG file for PDF inclusion."""
     try:
         print(f"Downloading SVG from: {svg_url}")
+
+        # Check svglib availability upfront
+        try:
+            from svglib.svglib import svg2rlg
+            from reportlab.graphics import renderPM
+        except ImportError as imp_err:
+            print(f"SVG conversion skipped — missing dependency: {imp_err}")
+            return None
+
         # Download SVG
         response = requests.get(svg_url, timeout=30)
         response.raise_for_status()
-        
+
         if not response.content:
             print("Empty SVG content received")
             return None
-            
+
         print(f"Downloaded {len(response.content)} bytes of SVG content")
-        
+
         # Convert SVG to ReportLab drawing
-        from svglib.svglib import svg2rlg
-        from reportlab.graphics import renderPM
-        
         drawing = svg2rlg(BytesIO(response.content))
-        
+
+        if drawing is None:
+            print(f"svg2rlg returned None for {svg_url} — SVG may be malformed")
+            return None
+
+        if drawing.width <= 0 or drawing.height <= 0:
+            print(f"svg2rlg produced invalid drawing (w={drawing.width}, h={drawing.height})")
+            return None
+
         # Create temporary file
         temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-        
+
         # Render as PNG with higher DPI for better quality
         renderPM.drawToFile(drawing, temp_file.name, fmt='PNG', dpi=150)
-        
+
         print(f"Successfully converted SVG to PNG: {temp_file.name}")
         return temp_file.name
     except Exception as e:
