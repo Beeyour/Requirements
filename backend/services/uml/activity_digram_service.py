@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from sqlalchemy.orm import Session
 from backend.services.uml.prompts import _ACTIVITY_DIAGRAM_SYSTEM
@@ -11,92 +12,93 @@ from backend.schemas.uml.activity import ActivityDiagramJSON
 
 
 def validate_plantuml_syntax(plantuml_code: str) -> str:
-    """Validate and fix common PlantUML syntax issues in activity diagrams.
+    """Validate and auto-fix common PlantUML syntax issues in activity diagrams.
+    
+    Uses count-based balancing with auto-correction instead of raising errors.
+    Unmatched closing blocks are removed; missing closing blocks are appended.
+    All fixes are logged for visibility in server logs.
     
     Args:
         plantuml_code: Raw PlantUML code string
         
     Returns:
-        Fixed PlantUML code string
-        
-    Raises:
-        ValueError: If syntax cannot be automatically fixed
+        Fixed PlantUML code string (never raises)
     """
+    logger = logging.getLogger(__name__)
+
     if not plantuml_code:
-        raise ValueError("Empty PlantUML code")
+        logger.warning("PlantUML validation: empty code string, returning minimal diagram")
+        return "@startuml\nstop\n@enduml"
     
     # Ensure proper start/end tags
     if not plantuml_code.strip().startswith('@startuml'):
         plantuml_code = '@startuml\n' + plantuml_code
+        logger.info("PlantUML validation: added missing @startuml tag")
     if not plantuml_code.strip().endswith('@enduml'):
         plantuml_code = plantuml_code.rstrip() + '\n@enduml'
-    
-    # Count fork and end fork blocks
-    fork_count = len(re.findall(r'^\s*fork\s*$', plantuml_code, re.MULTILINE))
-    end_fork_count = len(re.findall(r'^\s*end fork\s*$', plantuml_code, re.MULTILINE))
-    
-    # Count if and endif blocks
-    if_count = len(re.findall(r'^\s*if\s*\(', plantuml_code, re.MULTILINE))
-    endif_count = len(re.findall(r'^\s*endif\s*$', plantuml_code, re.MULTILINE))
-    
-    # Fix missing end fork blocks
-    if fork_count > end_fork_count:
-        missing_end_forks = fork_count - end_fork_count
-        # Add missing end fork statements before @enduml
-        end_fork_fix = '\n'.join(['end fork'] * missing_end_forks)
-        plantuml_code = plantuml_code.replace('@enduml', f'{end_fork_fix}\n@enduml')
-    
-    # Fix missing endif blocks
-    if if_count > endif_count:
-        missing_endifs = if_count - endif_count
-        # Add missing endif statements before @enduml
-        endif_fix = '\n'.join(['endif'] * missing_endifs)
-        plantuml_code = plantuml_code.replace('@enduml', f'{endif_fix}\n@enduml')
-    
-    # Validate swimlane declarations (should be at top after title)
+        logger.info("PlantUML validation: added missing @enduml tag")
+
+    # --- Line-by-line count-based balancing with auto-correction ---
     lines = plantuml_code.split('\n')
-    swimlane_pattern = re.compile(r'^\|(\w+)\|$')
-    swimlanes_found = []
-    title_found = False
-    swimlane_section_start = -1
-    
-    for i, line in enumerate(lines):
-        if line.strip().startswith('title'):
-            title_found = True
-        elif swimlane_pattern.match(line.strip()):
-            if swimlane_section_start == -1:
-                swimlane_section_start = i
-            swimlanes_found.append(swimlane_pattern.match(line.strip()).group(1))
-    
-    # Check for balanced fork/join in the actual structure
-    # This is a more sophisticated check for nested structures
-    fork_count = 0
-    if_count = 0
-    
+    fixed_lines = []
+    fork_counter = 0
+    if_counter = 0
+
     for line in lines:
         stripped = line.strip()
+
         if stripped == 'fork':
-            fork_count += 1
+            fork_counter += 1
+            fixed_lines.append(line)
         elif stripped == 'fork again':
-            # fork again continues the current fork block, doesn't change count
-            continue
+            # fork again continues the current fork block, doesn't change counter
+            fixed_lines.append(line)
         elif stripped == 'end fork':
-            fork_count -= 1
-            if fork_count < 0:
-                raise ValueError("Unmatched 'end fork' found - no corresponding fork")
+            if fork_counter > 0:
+                fork_counter -= 1
+                fixed_lines.append(line)
+            else:
+                # Unmatched end fork — remove it instead of crashing
+                logger.warning(
+                    "PlantUML validation: removed unmatched 'end fork' line: %s", line
+                )
         elif stripped.startswith('if ') and '(' in stripped:
-            if_count += 1
+            if_counter += 1
+            fixed_lines.append(line)
         elif stripped == 'endif':
-            if_count -= 1
-            if if_count < 0:
-                raise ValueError("Unmatched 'endif' found - no corresponding if")
-    
-    if fork_count > 0:
-        raise ValueError(f"Missing {fork_count} 'end fork' statement(s)")
-    elif if_count > 0:
-        raise ValueError(f"Missing {if_count} 'endif' statement(s)")
-    
-    return plantuml_code
+            if if_counter > 0:
+                if_counter -= 1
+                fixed_lines.append(line)
+            else:
+                # Unmatched endif — remove it instead of crashing
+                logger.warning(
+                    "PlantUML validation: removed unmatched 'endif' line: %s", line
+                )
+        else:
+            fixed_lines.append(line)
+
+    # Auto-correct: append missing end fork statements before @enduml
+    if fork_counter > 0:
+        logger.warning(
+            "PlantUML validation: appending %d missing 'end fork' statement(s)",
+            fork_counter,
+        )
+        # Insert before the @enduml line
+        enduml_idx = len(fixed_lines) - 1  # last line should be @enduml
+        for _ in range(fork_counter):
+            fixed_lines.insert(enduml_idx, 'end fork')
+
+    # Auto-correct: append missing endif statements before @enduml
+    if if_counter > 0:
+        logger.warning(
+            "PlantUML validation: appending %d missing 'endif' statement(s)",
+            if_counter,
+        )
+        enduml_idx = len(fixed_lines) - 1
+        for _ in range(if_counter):
+            fixed_lines.insert(enduml_idx, 'endif')
+
+    return '\n'.join(fixed_lines)
 
 
 async def generate_activity_json(

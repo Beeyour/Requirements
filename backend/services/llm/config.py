@@ -3,8 +3,8 @@ from typing import Dict
 # Dictionary mapping provider keys to another dictionary of { model_id: display_name }
 AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
     "openai": {
-        "gpt-5.4-nano": "GPT 5.4 Pro",
-        "gpt-5.4-mini": "GPT 5.4",
+        "gpt-5.4-nano": "GPT 5.4",
+        "gpt-5.4-mini": "GPT 5.4 mini",
 
     },
     "google": {
@@ -17,7 +17,7 @@ AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
 }
 
 DEFAULT_PROVIDER = "openai"
-DEFAULT_MODEL = "gpt-5.4-nano"   # gpt-5.4-2026-03-05
+DEFAULT_MODEL = "gpt-5.4-mini"   # gpt-5.4-2026-03-05
 
 PROVIDER_LABELS = {
     "openai": "OpenAI",
