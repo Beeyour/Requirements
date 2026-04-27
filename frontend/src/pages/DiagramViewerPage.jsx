@@ -217,10 +217,8 @@ export default function DiagramViewerPage() {
       </div>
 
       {/* --- MAIN PADDED LAYOUT --- */}
-      {/* تم تقليل الحواف (Padding) لتعظيم المساحة المستخدمة */}
       <div className="flex-1 flex flex-col overflow-hidden p-2 md:p-4 gap-4">
         
-        {/* تم إزالة max-w-7xl لجعل الحاوية تأخذ عرض الشاشة بالكامل */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full w-full relative">
           
           {/* Header section */}
@@ -254,8 +252,7 @@ export default function DiagramViewerPage() {
           </div>
 
           {/* Diagram Area */}
-          {/* تم إزالة items-center justify-center التي كانت تسبب قص الرسمة */}
-          <div className="flex-1 overflow-auto bg-slate-50/30 p-4 w-full h-full">
+          <div className="flex-1 overflow-auto bg-slate-50/30 w-full h-full">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -278,13 +275,16 @@ export default function DiagramViewerPage() {
                 </button>
               </div>
             ) : diagramSvg ? (
-              <div 
-                ref={svgContainerRef}
-                /* التعديل هنا: استخدام m-auto للرسمة داخل الحاوية */
-                className={`min-w-full min-h-full w-max flex bg-white rounded-xl shadow-sm border border-slate-100 p-6 [&>svg]:block [&>svg]:m-auto [&>svg]:max-w-none ${diagramType === 'usecase' ? 'cursor-pointer hover:border-blue-200 transition-colors' : ''}`}
-                onClick={handleSvgClick}
-                dangerouslySetInnerHTML={{ __html: diagramSvg }}
-              />
+              <div className="min-w-full min-h-full table">
+                <div className="table-cell align-middle text-center p-4 md:p-8">
+                  <div 
+                    ref={svgContainerRef}
+                    className={`inline-block text-left bg-white rounded-xl shadow-sm border border-slate-100 p-6 w-max [&>svg]:max-w-none [&>svg]:block ${diagramType === 'usecase' ? 'cursor-pointer hover:border-blue-200 transition-colors' : ''}`}
+                    onClick={handleSvgClick}
+                    dangerouslySetInnerHTML={{ __html: diagramSvg }}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-4">
