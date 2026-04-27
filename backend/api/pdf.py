@@ -182,6 +182,7 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
     )
     
     story = []
+    temp_files_to_cleanup = []  # defer deletion until after doc.build()
     
     # Title
     project_name = content_data['project_name']
@@ -227,8 +228,8 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
                 story.append(img)
                 story.append(Spacer(1, 20))
                 
-                # Clean up temp file
-                os.unlink(temp_file)
+                # Defer cleanup — file must exist until doc.build() reads it
+                temp_files_to_cleanup.append(temp_file)
             else:
                 story.append(Paragraph(f"[{diagram_type} diagram could not be rendered]", styles['Normal']))
                 story.append(Spacer(1, 20))
@@ -285,7 +286,8 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
                         img.hAlign = 'CENTER'
                         story.append(img)
                         story.append(Spacer(1, 15))
-                        os.unlink(temp_file)
+                        # Defer cleanup — file must exist until doc.build() reads it
+                        temp_files_to_cleanup.append(temp_file)
                     else:
                         story.append(Paragraph(f"[Sequence diagram {seq_diagram.usecase_idx} could not be rendered]", styles['Normal']))
                         story.append(Spacer(1, 15))
@@ -316,6 +318,14 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
     
     # Build PDF
     doc.build(story)
+
+    # Now safe to clean up temp image files
+    for tf in temp_files_to_cleanup:
+        try:
+            os.unlink(tf)
+        except OSError:
+            pass
+
     buffer.seek(0)
     return buffer
 
