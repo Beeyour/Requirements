@@ -278,10 +278,10 @@ export default function DiagramViewerPage() {
                 </button>
               </div>
             ) : diagramSvg ? (
-              /* تم إضافة w-max و min-w-full لضمان تمدد الرسمة بشكل صحيح مع توفير Scrollbar */
               <div 
                 ref={svgContainerRef}
-                className={`w-max min-w-full bg-white rounded-xl shadow-sm border border-slate-100 p-4 [&>svg]:max-w-none [&>svg]:w-auto [&>svg]:h-auto ${diagramType === 'usecase' ? 'cursor-pointer hover:border-blue-200 transition-colors' : ''}`}
+                /* التعديل هنا: إضافة h-max min-h-full flex items-center justify-center */
+                className={`w-max h-max min-w-full min-h-full flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-100 p-4 [&>svg]:max-w-none [&>svg]:w-auto [&>svg]:h-auto ${diagramType === 'usecase' ? 'cursor-pointer hover:border-blue-200 transition-colors' : ''}`}
                 onClick={handleSvgClick}
                 dangerouslySetInnerHTML={{ __html: diagramSvg }}
               />
