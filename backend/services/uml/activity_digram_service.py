@@ -38,64 +38,75 @@ def validate_plantuml_syntax(plantuml_code: str) -> str:
         plantuml_code = plantuml_code.rstrip() + '\n@enduml'
         logger.info("PlantUML validation: added missing @enduml tag")
 
-    # --- Line-by-line count-based balancing with auto-correction ---
+    # --- Pre-pass: remove premature 'end fork' before 'fork again' ---
+    # In PlantUML, 'fork again' must appear INSIDE the same fork block.
+    # An 'end fork' immediately before 'fork again' is always a syntax error.
+    plantuml_code = re.sub(
+        r'^[ \t]*end fork[ \t]*\n([ \t]*\n)*([ \t]*fork again)',
+        r'\2',
+        plantuml_code,
+        flags=re.MULTILINE,
+    )
+
+    # --- Line-by-line fork_depth tracking with auto-correction ---
     lines = plantuml_code.split('\n')
     fixed_lines = []
-    fork_counter = 0
-    if_counter = 0
+    fork_depth = 0
+    if_depth = 0
 
     for line in lines:
         stripped = line.strip()
 
         if stripped == 'fork':
-            fork_counter += 1
+            fork_depth += 1
             fixed_lines.append(line)
         elif stripped == 'fork again':
-            # fork again continues the current fork block, doesn't change counter
+            # fork again continues the current fork block, doesn't change depth
             fixed_lines.append(line)
         elif stripped == 'end fork':
-            if fork_counter > 0:
-                fork_counter -= 1
+            if fork_depth > 0:
+                fork_depth -= 1
                 fixed_lines.append(line)
             else:
-                # Unmatched end fork — remove it instead of crashing
+                # Extra end fork with no open fork — remove it
                 logger.warning(
-                    "PlantUML validation: removed unmatched 'end fork' line: %s", line
+                    "PlantUML validation: removed extra 'end fork' (depth was 0): %s",
+                    line,
                 )
         elif stripped.startswith('if ') and '(' in stripped:
-            if_counter += 1
+            if_depth += 1
             fixed_lines.append(line)
         elif stripped == 'endif':
-            if if_counter > 0:
-                if_counter -= 1
+            if if_depth > 0:
+                if_depth -= 1
                 fixed_lines.append(line)
             else:
-                # Unmatched endif — remove it instead of crashing
+                # Extra endif with no open if — remove it
                 logger.warning(
-                    "PlantUML validation: removed unmatched 'endif' line: %s", line
+                    "PlantUML validation: removed extra 'endif' (depth was 0): %s",
+                    line,
                 )
         else:
             fixed_lines.append(line)
 
     # Auto-correct: append missing end fork statements before @enduml
-    if fork_counter > 0:
+    if fork_depth > 0:
         logger.warning(
             "PlantUML validation: appending %d missing 'end fork' statement(s)",
-            fork_counter,
+            fork_depth,
         )
-        # Insert before the @enduml line
         enduml_idx = len(fixed_lines) - 1  # last line should be @enduml
-        for _ in range(fork_counter):
+        for _ in range(fork_depth):
             fixed_lines.insert(enduml_idx, 'end fork')
 
     # Auto-correct: append missing endif statements before @enduml
-    if if_counter > 0:
+    if if_depth > 0:
         logger.warning(
             "PlantUML validation: appending %d missing 'endif' statement(s)",
-            if_counter,
+            if_depth,
         )
         enduml_idx = len(fixed_lines) - 1
-        for _ in range(if_counter):
+        for _ in range(if_depth):
             fixed_lines.insert(enduml_idx, 'endif')
 
     return '\n'.join(fixed_lines)
