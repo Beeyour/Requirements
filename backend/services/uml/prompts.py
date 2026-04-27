@@ -14,12 +14,45 @@ CRITICAL RULES:
 7. CRUD RULE: Group Create/Read/Update/Delete into "Manage [Entity]".
 8. HYPERLINKS: Do NOT include any URLs or hyperlinks in your output. The system adds them automatically.
 
+### STRICT ACTOR DEFINITION:
+- Actors MUST be one of: (a) Human roles (e.g., "Admin", "Customer", "Doctor"), (b) External systems (e.g., "PaymentGateway", "EmailService"), or (c) Time/Triggers (e.g., "Timer", "SystemClock").
+- Hardware devices (keyboard, mouse, screen, sensor, display) are NEVER actors — they are system components.
+- Internal system modules or classes (e.g., "Database", "AuthModule", "Logger") are NEVER actors — they are part of the system boundary.
+- If unsure, ask: "Does this entity exist OUTSIDE the system and interact WITH it?" If NO, it is NOT an actor.
+
+### ABSTRACTION & GROUPING:
+- Do NOT map every single requirement 1:1 to a Use Case. Group related micro-actions into meaningful, high-level user goals.
+- Example: "Enter PIN" + "Verify PIN" + "Grant Access" → single Use Case "Authenticate User".
+- Example: "View List" + "Select Item" + "Open Details" → single Use Case "Browse Items".
+- Each Use Case should represent a COMPLETE, value-delivering goal from the actor's perspective.
+
+### ABSOLUTE CONNECTIVITY RULE — NO FLOATING USE CASES:
+Every single Use Case MUST be connected to at least one other element via one of these three mechanisms:
+
+1. **links** (Actor → Use Case): An actor directly initiates or participates in the use case.
+   - Meaning: The actor interacts with the system to achieve this goal.
+   - JSON: {"actor_idx": <int>, "usecase_idx": <int>}
+   - PlantUML equivalent: Actor --> UseCase
+
+2. **includes** (Base Use Case → Included Use Case): The base use case ALWAYS requires the included use case to complete. The included behavior is MANDATORY and cannot stand alone.
+   - Meaning: "Base CANNOT complete without running Included."
+   - Example: "Checkout" <<include>> "Process Payment" — you cannot checkout without paying.
+   - JSON: {"base_idx": <int>, "included_idx": <int>}
+   - PlantUML equivalent: Base ..> Included : <<include>>
+
+3. **extends** (Extending Use Case → Base Use Case): The extending use case represents OPTIONAL or CONDITIONAL behavior that MAY happen during the base use case. The base can complete without the extension.
+   - Meaning: "Extending MAY optionally extend Base under certain conditions."
+   - Example: "Request Catalog" <<extend>> "Browse Items" — browsing may optionally trigger a catalog request.
+   - JSON: {"extending_idx": <int>, "base_idx": <int>}
+   - PlantUML equivalent: Extending ..> Base : <<extend>>
+
+VALIDATION CHECK before outputting: Count your use_cases. Each one MUST appear in at least one link, include, or extend relation. If any use case has zero connections, either connect it or remove it.
+
 EXPECTED JSON SCHEMA:
 {
   "system_title": "[Concise System Name]",
   "actors": [
-    "[Actor Name 1]",
-    "[Actor Name 2]"
+    "[Actor Name 1 — must be human role, external system, or time/trigger]"
   ],
   "use_cases": [
     "[Short Verb-Noun phrase, max 3-4 words, e.g., 'Generate Report']"
