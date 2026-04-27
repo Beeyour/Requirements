@@ -34,7 +34,7 @@ export default function Navbar({ projectName, isDashboard }) {
           {/* Conditionally render AutoAnalyst if on Dashboard */}
           {isDashboard && (
             <span className="text-brand-500 font-bold text-xl tracking-tight">
-              AutoAnalyst
+              AnalystLM
             </span>
           )}
         </Link>
