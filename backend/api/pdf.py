@@ -32,7 +32,7 @@ except ImportError:
 
 # Default model settings
 DEFAULT_PROVIDER = "openai"
-DEFAULT_MODEL = "gpt-4"
+DEFAULT_MODEL = "gpt-4o-mini"
 
 async def _ensure_diagram_exists(db: Session, project_id: int, diagram_type: str, usecase_idx: int = None):
     """Ensure diagram exists, generate if missing."""
@@ -392,43 +392,56 @@ async def pdf_master_orchestrator(
         if use_cases:
             for i, use_case in enumerate(use_cases):
                 print(f"   Processing sequence diagram {i+1}/{len(use_cases)}: {use_case}")
-                
-                if force_regenerate:
-                    formatted = _get_formatted_requirements(project_id, db)
-                    await sequence_digram_service.generate_sequence(db, project_id, i, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
-                
-                await _ensure_diagram_exists(db, project_id, 'sequence', i)
-                seq_diagram = get_latest_sequence_by_usecase_idx(db, project_id, i)
-                
-                if seq_diagram and seq_diagram.get('svg_url'):
+                try:
+                    if force_regenerate:
+                        formatted = _get_formatted_requirements(project_id, db)
+                        await sequence_digram_service.generate_sequence(db, project_id, i, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
+                    
+                    await _ensure_diagram_exists(db, project_id, 'sequence', i)
+                    seq_diagram = get_latest_sequence_by_usecase_idx(db, project_id, i)
+                    
+                    if seq_diagram and seq_diagram.get('svg_url'):
+                        component_status["sequence_diagrams"].append({
+                            "usecase_idx": i,
+                            "usecase_name": use_case,
+                            "status": True,
+                            "svg_url": seq_diagram['svg_url']
+                        })
+                        print(f"   ✅ Sequence diagram {i} verified")
+                    else:
+                        print(f"   ❌ Failed to generate sequence diagram {i}")
+                        component_status["sequence_diagrams"].append({
+                            "usecase_idx": i,
+                            "usecase_name": use_case,
+                            "status": False
+                        })
+                except Exception as seq_err:
+                    print(f"   ❌ Error generating sequence diagram {i}: {seq_err}")
                     component_status["sequence_diagrams"].append({
                         "usecase_idx": i,
                         "usecase_name": use_case,
-                        "status": True,
-                        "svg_url": seq_diagram['svg_url']
-                    })
-                    print(f"   ✅ Sequence diagram {i} verified")
-                else:
-                    print(f"   ❌ Failed to generate sequence diagram {i}")
-                    component_status["sequence_diagrams"].append({
-                        "usecase_idx": i,
-                        "usecase_name": use_case,
-                        "status": False
+                        "status": False,
+                        "error": str(seq_err)
                     })
         
         # Step 5: Generate/verify Activity Diagram
         print("⚡ Step 5: Generating/verifying Activity Diagram...")
-        if force_regenerate:
-            formatted = _get_formatted_requirements(project_id, db)
-            await activity_digram_service.generate_activity(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
-        
-        await _ensure_diagram_exists(db, project_id, 'activity')
-        activity_diagram = get_cached_diagram(db, activity_digram_service.ActivityDiagram, project_id)
-        if activity_diagram and activity_diagram.get('svg_url'):
-            component_status["activity_diagram"] = True
-            print("✅ Activity Diagram verified")
-        else:
-            raise ValueError("Failed to generate Activity Diagram")
+        try:
+            if force_regenerate:
+                formatted = _get_formatted_requirements(project_id, db)
+                await activity_digram_service.generate_activity(db, project_id, formatted, DEFAULT_PROVIDER, DEFAULT_MODEL)
+            
+            await _ensure_diagram_exists(db, project_id, 'activity')
+            activity_diagram = get_cached_diagram(db, activity_digram_service.ActivityDiagram, project_id)
+            if activity_diagram and activity_diagram.get('svg_url'):
+                component_status["activity_diagram"] = True
+                print("✅ Activity Diagram verified")
+            else:
+                print("❌ Failed to generate Activity Diagram, continuing without it")
+                component_status["activity_diagram"] = False
+        except Exception as act_err:
+            print(f"❌ Error generating Activity Diagram: {act_err}")
+            component_status["activity_diagram"] = False
         
         # Step 6: Compile comprehensive PDF
         print("📄 Step 6: Compiling comprehensive PDF...")
