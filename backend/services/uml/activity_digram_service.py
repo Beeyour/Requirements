@@ -1,4 +1,5 @@
 import json
+import re
 from sqlalchemy.orm import Session
 from backend.services.uml.prompts import _ACTIVITY_DIAGRAM_SYSTEM
 from backend.services.uml.utils import validate_and_parse_json, build_activity_plantuml, get_plantuml_svg
@@ -7,6 +8,95 @@ from backend.services.uml import usecase_service, class_digram_service
 from backend.services.llm import call_llm
 from backend.models.uml.activity_diagram import ActivityDiagram
 from backend.schemas.uml.activity import ActivityDiagramJSON
+
+
+def validate_plantuml_syntax(plantuml_code: str) -> str:
+    """Validate and fix common PlantUML syntax issues in activity diagrams.
+    
+    Args:
+        plantuml_code: Raw PlantUML code string
+        
+    Returns:
+        Fixed PlantUML code string
+        
+    Raises:
+        ValueError: If syntax cannot be automatically fixed
+    """
+    if not plantuml_code:
+        raise ValueError("Empty PlantUML code")
+    
+    # Ensure proper start/end tags
+    if not plantuml_code.strip().startswith('@startuml'):
+        plantuml_code = '@startuml\n' + plantuml_code
+    if not plantuml_code.strip().endswith('@enduml'):
+        plantuml_code = plantuml_code.rstrip() + '\n@enduml'
+    
+    # Count fork and end fork blocks
+    fork_count = len(re.findall(r'^\s*fork\s*$', plantuml_code, re.MULTILINE))
+    end_fork_count = len(re.findall(r'^\s*end fork\s*$', plantuml_code, re.MULTILINE))
+    
+    # Count if and endif blocks
+    if_count = len(re.findall(r'^\s*if\s*\(', plantuml_code, re.MULTILINE))
+    endif_count = len(re.findall(r'^\s*endif\s*$', plantuml_code, re.MULTILINE))
+    
+    # Fix missing end fork blocks
+    if fork_count > end_fork_count:
+        missing_end_forks = fork_count - end_fork_count
+        # Add missing end fork statements before @enduml
+        end_fork_fix = '\n'.join(['end fork'] * missing_end_forks)
+        plantuml_code = plantuml_code.replace('@enduml', f'{end_fork_fix}\n@enduml')
+    
+    # Fix missing endif blocks
+    if if_count > endif_count:
+        missing_endifs = if_count - endif_count
+        # Add missing endif statements before @enduml
+        endif_fix = '\n'.join(['endif'] * missing_endifs)
+        plantuml_code = plantuml_code.replace('@enduml', f'{endif_fix}\n@enduml')
+    
+    # Validate swimlane declarations (should be at top after title)
+    lines = plantuml_code.split('\n')
+    swimlane_pattern = re.compile(r'^\|(\w+)\|$')
+    swimlanes_found = []
+    title_found = False
+    swimlane_section_start = -1
+    
+    for i, line in enumerate(lines):
+        if line.strip().startswith('title'):
+            title_found = True
+        elif swimlane_pattern.match(line.strip()):
+            if swimlane_section_start == -1:
+                swimlane_section_start = i
+            swimlanes_found.append(swimlane_pattern.match(line.strip()).group(1))
+    
+    # Check for balanced fork/join in the actual structure
+    # This is a more sophisticated check for nested structures
+    fork_count = 0
+    if_count = 0
+    
+    for line in lines:
+        stripped = line.strip()
+        if stripped == 'fork':
+            fork_count += 1
+        elif stripped == 'fork again':
+            # fork again continues the current fork block, doesn't change count
+            continue
+        elif stripped == 'end fork':
+            fork_count -= 1
+            if fork_count < 0:
+                raise ValueError("Unmatched 'end fork' found - no corresponding fork")
+        elif stripped.startswith('if ') and '(' in stripped:
+            if_count += 1
+        elif stripped == 'endif':
+            if_count -= 1
+            if if_count < 0:
+                raise ValueError("Unmatched 'endif' found - no corresponding if")
+    
+    if fork_count > 0:
+        raise ValueError(f"Missing {fork_count} 'end fork' statement(s)")
+    elif if_count > 0:
+        raise ValueError(f"Missing {if_count} 'endif' statement(s)")
+    
+    return plantuml_code
 
 
 async def generate_activity_json(
@@ -54,8 +144,10 @@ async def generate_activity_json(
 
 
 def generate_activity_plantuml(data: dict) -> str:
-    """Build PlantUML string from validated activity diagram data."""
-    return build_activity_plantuml(data)
+    """Build PlantUML string from validated activity diagram data with syntax validation."""
+    plantuml_code = build_activity_plantuml(data)
+    # Validate and fix syntax issues
+    return validate_plantuml_syntax(plantuml_code)
 
 
 async def generate_activity(

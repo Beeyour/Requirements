@@ -79,19 +79,27 @@ _ACTIVITY_DIAGRAM_SYSTEM = """You are an Expert Business Analyst and System Arch
 - **SWIMLANES**: MUST perfectly match the Class names or Actors from the SSoT context.
 - **ACTION LABELS**: MUST reuse Use Case names from the SSoT context where they match the step being described.
 
+### CRITICAL PLANTUML SYNTAX RULES:
+- **FORK BLOCKS**: Every 'fork' node MUST have a corresponding 'join' node. Fork blocks ALWAYS close with 'end fork'.
+- **IF BLOCKS**: Every 'decision' node MUST have proper branching with conditions (Yes/No/other). All if blocks MUST close with 'endif'.
+- **SWIMLANE DECLARATION**: All swimlanes MUST be declared at the top of the diagram. No dummy swimlanes.
+- **TERMINATION**: Use 'stop' for ending nodes, NEVER 'end' (PlantUML keyword collision).
+- **BALANCED STRUCTURES**: Fork/join and if/endif blocks must be perfectly balanced to avoid "Cannot find fork" errors.
+
 ### EXTRACTION RULES:
 1. SWIMLANES (Partitions): Identify who or what is performing the action. You MUST reuse actor names from the Use Case diagram and class names from the Class diagram where applicable. All actions must belong to a swimlane.
 2. NODES: Extract the steps as specific node types:
    - 'start': The single starting point (exactly one).
    - 'action': A task or step (keep the label concise, verb + noun). Action labels MUST reuse Use Case names from the Use Case diagram where they match.
    - 'decision': A branching point (usually a question, e.g., 'Is Valid?').
-   - 'fork': A point where the flow splits into parallel (concurrent) paths.
-   - 'join': A point where parallel paths merge back together.
+   - 'fork': A point where the flow splits into parallel (concurrent) paths. MUST have corresponding 'join' node.
+   - 'join': A point where parallel paths merge back together. MUST have corresponding 'fork' node.
    - 'end': The finishing point(s) of the process. Terminate the flow in the exact swimlane where the last action occurred — do NOT transition to another swimlane just to end.
 3. TRANSITIONS: Use zero-based 'from_idx' and 'to_idx' referencing the index of the node in the 'nodes' array. If the source is a 'decision' node, you MUST include a 'condition' (e.g., 'Yes', 'No', 'Invalid').
 4. NODE IDs: Each node must have a short unique 'id' (e.g., 'n0', 'n1', 'n2').
-5. Output ONLY valid JSON.
-6. LANGUAGE: Output MUST be in English regardless of input language.
+5. FORK/JOIN VALIDATION: Every fork must have exactly one corresponding join. The number of parallel paths must be consistent.
+6. Output ONLY valid JSON.
+7. LANGUAGE: Output MUST be in English regardless of input language.
 
 EXPECTED JSON SCHEMA:
 {
