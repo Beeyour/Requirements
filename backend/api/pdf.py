@@ -32,7 +32,7 @@ except ImportError:
 
 # Default model settings
 DEFAULT_PROVIDER = "openai"
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = "gpt-5.4-mini"
 
 async def _ensure_diagram_exists(db: Session, project_id: int, diagram_type: str, usecase_idx: int = None):
     """Ensure diagram exists, generate if missing."""
@@ -179,8 +179,8 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
         story.append(Paragraph("1. Functional Requirements", heading_style))
         for i, req in enumerate(content_data['functional'], 1):
             # Handle both ORM objects and dictionaries
-            req_title = getattr(req, 'title', None) or req.get('description', f'Functional Requirement {i}')
-            req_desc = getattr(req, 'description', None) or req.get('description', 'No description available')
+            req_title = getattr(req, 'title', None) or getattr(req, 'description', None) or f'Functional Requirement {i}'
+            req_desc = getattr(req, 'description', None) or 'No description available'
             story.append(Paragraph(f"<b>{i}. {req_title}</b>", styles['Normal']))
             story.append(Paragraph(f"{req_desc}", styles['Normal']))
             story.append(Spacer(1, 12))
@@ -191,8 +191,8 @@ def _create_pdf_content(content_data: Dict[str, Any], project_id: int, db: Sessi
         story.append(Paragraph("2. Non-Functional Requirements", heading_style))
         for i, req in enumerate(content_data['non_functional'], 1):
             # Handle both ORM objects and dictionaries
-            req_title = getattr(req, 'title', None) or req.get('description', f'Non-Functional Requirement {i}')
-            req_desc = getattr(req, 'description', None) or req.get('description', 'No description available')
+            req_title = getattr(req, 'title', None) or getattr(req, 'description', None) or f'Non-Functional Requirement {i}'
+            req_desc = getattr(req, 'description', None) or 'No description available'
             story.append(Paragraph(f"<b>{i}. {req_title}</b>", styles['Normal']))
             story.append(Paragraph(f"{req_desc}", styles['Normal']))
             story.append(Spacer(1, 12))
