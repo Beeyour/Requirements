@@ -39,14 +39,12 @@ async def start_new_interview(db: Session, project: Project):
     existing = get_active_history(db, project.id)
     if existing:
         return format_message(existing[-1])
-
     # Added 'await' for the AI call
     greeting_content = await get_initial_greeting(
         project.app_name,
         project.model_provider,
         project.model_name,
     )
-    
     new_msg = ConversationHistory(project_id=project.id, role="assistant", content=greeting_content)
     db.add(new_msg)
     db.commit()
@@ -55,16 +53,13 @@ async def start_new_interview(db: Session, project: Project):
 
 async def process_chat_message(db: Session, project: Project, content: str):
     # Changed to 'async' to support non-blocking AI calls
-    
     # 1. Save user message (Sync DB)
     user_msg = ConversationHistory(project_id=project.id, role="user", content=content)
     db.add(user_msg)
     db.commit()
-
     # 2. Prepare context
     all_msgs = get_active_history(db, project.id)
     context = [{"role": m.role, "content": m.content} for m in all_msgs]
-
     # 3. Get AI JSON-structured response (using recent context for efficiency)
     ai_resp = await get_interview_response(
         context[:], 
@@ -80,7 +75,6 @@ async def process_chat_message(db: Session, project: Project, content: str):
             project.model_name
         )
         saturation_flag = bool(saturation.get("is_saturated", False))
-
     # 4. Save AI response (Sync DB)
     assistant_msg = ConversationHistory(
         project_id=project.id, role="assistant", content=ai_resp["message"]
@@ -88,7 +82,6 @@ async def process_chat_message(db: Session, project: Project, content: str):
     db.add(assistant_msg)
     db.commit()
     db.refresh(assistant_msg)
-
     # Return structure remains identical for frontend compatibility
     return {
         "message": ai_resp["message"],

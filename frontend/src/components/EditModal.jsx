@@ -4,12 +4,10 @@ import ConflictReport from './ConflictReport'
 
 export default function EditModal({ requirement, onSave, onClose, saving }) {
   const { t } = useTranslation() // 2. Initialize the hook
-
   const [description, setDescription] = useState(requirement?.description || '')
   const [changeReason, setChangeReason] = useState('')
   const [conflictReport, setConflictReport] = useState(null)
   const [saved, setSaved] = useState(false)
-
   useEffect(() => {
     if (requirement) {
       setDescription(requirement.description)
@@ -18,9 +16,7 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
       setSaved(false)
     }
   }, [requirement])
-
   if (!requirement) return null
-
   const handleSave = async () => {
     const result = await onSave(requirement.id, description, changeReason)
     if (result) {
@@ -28,9 +24,7 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
       setSaved(true)
     }
   }
-
   const hasChanged = description.trim() !== requirement.description.trim()
-
   return (
     // 3. Added 'text-start' to the wrapper to ensure text aligns correctly based on language direction
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-start">
@@ -47,7 +41,6 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
               </svg>
             </button>
           </div>
-
           <div className="flex items-center gap-2 mb-4">
             <span
               className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
@@ -63,7 +56,6 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
               {t('version_prefix')}{requirement.version_number}
             </span>
           </div>
-
           <div className="mb-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               {t('description_label')}
@@ -77,7 +69,6 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
               placeholder={t('desc_placeholder')}
             />
           </div>
-
           <div className="mb-5">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               {t('reason_label')} <span className="text-slate-400 font-normal">{t('optional')}</span>
@@ -91,7 +82,6 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
               placeholder={t('reason_placeholder')}
             />
           </div>
-
           {saved && !conflictReport && (
             <p className="text-sm text-green-600 mb-4 flex items-center gap-1">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -104,9 +94,7 @@ export default function EditModal({ requirement, onSave, onClose, saving }) {
               {t('save_success')}
             </p>
           )}
-
           <ConflictReport report={conflictReport} />
-
           <div className="flex gap-3 mt-5">
             <button
               onClick={onClose}

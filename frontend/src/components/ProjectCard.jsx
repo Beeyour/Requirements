@@ -11,14 +11,11 @@ const PROVIDER_COLORS = {
 export default function ProjectCard({ project, onDelete, viewMode = 'grid' }) {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
-
   const formatted = new Date(project.created_at).toLocaleDateString(i18n.language, {
     year: 'numeric', month: 'short', day: 'numeric',
   })
-
   const providerLabel = PROVIDER_LABELS[project.model_provider] || project.model_provider
   const providerColor = PROVIDER_COLORS[project.model_provider] || 'bg-slate-50 text-slate-600'
-
   // ================= LIST VIEW FORMAT =================
   if (viewMode === 'list') {
     return (
@@ -30,19 +27,15 @@ export default function ProjectCard({ project, onDelete, viewMode = 'grid' }) {
           <span className="text-xl">💻</span>
           <span className="font-medium text-slate-800">{project.app_name}</span>
         </div>
-        
         <div className="text-sm text-slate-600">{formatted}</div>
-        
         <div>
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${providerColor}`}>
             {providerLabel}
           </span>
         </div>
-        
         <div className="text-sm text-slate-600">
           {project.requirement_count} {project.requirement_count !== 1 ? t('reqs_plural') : t('req_singular')}
         </div>
-        
         <div className="flex justify-end">
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(project.id) }}
@@ -76,9 +69,7 @@ export default function ProjectCard({ project, onDelete, viewMode = 'grid' }) {
           </svg>
         </button>
       </div>
-
       <p className="text-sm text-slate-500 mb-3">{formatted}</p>
-
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${providerColor}`}>
           {providerLabel}
@@ -87,7 +78,6 @@ export default function ProjectCard({ project, onDelete, viewMode = 'grid' }) {
           {project.requirement_count} {project.requirement_count !== 1 ? t('reqs_plural') : t('req_singular')}
         </span>
       </div>
-
       <div className="flex gap-2">
         <button
           onClick={() => navigate(`/project/${project.id}/interview`)}

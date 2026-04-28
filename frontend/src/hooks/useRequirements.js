@@ -5,7 +5,6 @@ export function useRequirements(projectId) {
   const [requirements, setRequirements] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-
   const fetchRequirements = useCallback(async () => {
     if (!projectId) return
     setLoading(true)
@@ -19,7 +18,6 @@ export function useRequirements(projectId) {
       setLoading(false)
     }
   }, [projectId])
-
   const generateSRS = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -34,7 +32,6 @@ export function useRequirements(projectId) {
       setLoading(false)
     }
   }, [projectId])
-
   const updateRequirement = useCallback(async (id, description, changeReason) => {
     const { data } = await apiClient.put(`/requirements/update-requirement/${id}`, {
       description,
@@ -45,7 +42,6 @@ export function useRequirements(projectId) {
     )
     return data
   }, [])
-
   return {
     requirements,
     loading,

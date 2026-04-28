@@ -17,7 +17,6 @@ router = APIRouter()
 
 
 def _get_formatted_requirements(project_id: int, db: Session) -> str:
-    """Fetch and format requirements; raise 404 if none exist."""
     requirements = requirement_service.get_project_requirements(db, project_id, False)
     formatted = usecase_service.format_requirements_for_ai(requirements)
     if not formatted:
@@ -31,7 +30,6 @@ async def generate_usecase(
     db: Session = Depends(get_db),
     force: bool = Query(False, description="Force regeneration even if cached"),
 ):
-    # Return cached diagram if available and force=False
     if not force:
         cached = get_cached_diagram(db, UseCaseDiagram, project_id)
         if cached:

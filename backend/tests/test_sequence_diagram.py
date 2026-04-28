@@ -29,21 +29,16 @@ def test_activity_diagram_with_decision():
         ],
     }
     puml = build_activity_plantuml(data)
-
     # Conditions on same line as if/else
     assert "if (Is Valid?) then (Yes)" in puml
     assert "else (No)" in puml
-
     # Use 'stop', never 'end' for termination
     assert "stop" in puml
-
     # No dummy |Swimlane| line
     assert "|Swimlane|" not in puml
-
     # Swimlanes declared at top
     assert "|Receptionist|" in puml
     assert "|System|" in puml
-
     print("Activity diagram: PASS")
 
 
@@ -71,18 +66,14 @@ def test_sequence_diagram_basic():
         ],
     }
     puml = build_sequence_plantuml(data, 1, 0)
-
     # Messages use correct arrow types
     assert "P0 -> P1 : enterDetails()" in puml
     assert "P2 --> P0 : confirmation" in puml
-
     # Fragment rendered correctly
     assert "alt if valid" in puml
     assert "end" in puml
-
     # Back link to use case diagram
     assert "[[/generate-usecase/1]]" in puml
-
     print("Sequence diagram: PASS")
 
 
@@ -97,15 +88,12 @@ def test_sequence_diagram_from_usecase_hyperlink():
         "extends": [],
     }
     puml = build_usecase_plantuml(data, 5)
-
     # Each use case has a clickable hyperlink to its sequence diagram
     assert "[[/generate-sequence/5/0]]" in puml
     assert "[[/generate-sequence/5/1]]" in puml
-
     # Alias format: UC_{idx}
     assert "UC_0" in puml
     assert "UC_1" in puml
-
     print("Use Case hyperlink: PASS")
 
 

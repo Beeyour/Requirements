@@ -8,12 +8,10 @@ class ActivityNode(BaseModel):
     label: str = ""
     swimlane_idx: int
 
-
 class ActivityTransition(BaseModel):
     from_idx: int
     to_idx: int
     condition: str = ""
-
 
 class ActivityDiagramJSON(BaseModel):
     title: str

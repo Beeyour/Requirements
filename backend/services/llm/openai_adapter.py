@@ -9,12 +9,9 @@ class OpenAIAdapter(BaseLLMAdapter):
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise RuntimeError("OPENAI_API_KEY environment variable is not set")
-
         self.client = AsyncOpenAI(api_key=self.api_key)
-
     def _is_new_model(self, model: str) -> bool:
         return any(x in model for x in ["gpt-4", "gpt-5", "o"])
-
     def _supports_json_mode(self, model: str) -> bool:
         """Check if the model supports the json_object response format."""
         # Models known to support response_format={"type": "json_object"}
@@ -25,7 +22,6 @@ class OpenAIAdapter(BaseLLMAdapter):
             "gpt-5",
         ]
         return any(model.startswith(p) for p in supported_prefixes)
-
     async def call(
         self,
         model: str,
@@ -35,19 +31,14 @@ class OpenAIAdapter(BaseLLMAdapter):
         max_tokens: int,
         is_json: bool
     ) -> str:
-
         input_messages = []
-
         if system_prompt:
             input_messages.append({
                 "role": "system",
                 "content": system_prompt
             })
-
         input_messages.extend(messages)
-
         try:
-
             kwargs = {}
             if is_json and self._supports_json_mode(model):
                 kwargs["response_format"] = {"type": "json_object"}
@@ -61,19 +52,15 @@ class OpenAIAdapter(BaseLLMAdapter):
                     "\n\nCRITICAL: You MUST respond with ONLY valid JSON. "
                     "No markdown, no prose, no explanation — pure JSON inside curly braces."
                 )
-
             if self._is_new_model(model):
-
                 response = await self.client.chat.completions.create(
                     model=model,
                     messages=input_messages,
                     temperature=temperature,
                     extra_body={"max_completion_tokens": max_tokens, **({} if not kwargs else {"response_format": kwargs.get("response_format")})},
                 )
-
                 return response.choices[0].message.content
             else:
-
                 response = await self.client.chat.completions.create(
                     model=model,
                     messages=input_messages,
@@ -81,9 +68,7 @@ class OpenAIAdapter(BaseLLMAdapter):
                     max_tokens=max_tokens,
                     **kwargs,
                 )
-
                 return response.choices[0].message.content
-
         except Exception as e:
             print(f"OpenAI API Error: {str(e)}")
             raise RuntimeError(f"Failed to call OpenAI: {str(e)}")

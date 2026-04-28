@@ -17,7 +17,6 @@ def save_diagram(
     **kwargs
 ) -> Any:
     """Create and commit a diagram record, return the ORM instance.
-
     Args:
         db: SQLAlchemy session
         model_class: One of UseCaseDiagram, ClassDiagram, ActivityDiagram, SequenceDiagram
@@ -26,7 +25,6 @@ def save_diagram(
         plantuml_code: Raw PlantUML source
         data: Parsed JSON structure (the "data" key from API response)
         **kwargs: Extra columns (e.g., usecase_id for SequenceDiagram)
-
     Returns:
         The committed ORM instance
     """
@@ -45,12 +43,10 @@ def save_diagram(
 
 def get_latest_diagram(db: Session, model_class: Type, project_id: int) -> Optional[dict]:
     """Retrieve the most recent diagram's parsed_data for a project.
-
     Args:
         db: SQLAlchemy session
         model_class: Diagram model class
         project_id: Project ID
-
     Returns:
         The parsed_data dict or None if no record exists
     """
@@ -62,7 +58,6 @@ def get_latest_diagram(db: Session, model_class: Type, project_id: int) -> Optio
     )
     return record.parsed_data if record else None
 
-
 def get_latest_diagram_record(db: Session, model_class: Type, project_id: int) -> Optional[Any]:
     """Retrieve the most recent diagram ORM record for a project."""
     return (
@@ -72,14 +67,11 @@ def get_latest_diagram_record(db: Session, model_class: Type, project_id: int) -
         .first()
     )
 
-
 def get_ssot_context(db: Session, project_id: int) -> tuple[Optional[dict], Optional[dict]]:
     """Fetch UseCase and Class diagram data from DB (SSoT).
-
     Args:
         db: SQLAlchemy session
         project_id: Project ID
-
     Returns:
         (usecase_data, class_data) tuple — each may be None if not yet generated
     """
@@ -87,19 +79,15 @@ def get_ssot_context(db: Session, project_id: int) -> tuple[Optional[dict], Opti
     class_data = get_latest_diagram(db, ClassDiagram, project_id)
     return usecase_data, class_data
 
-
 def get_cached_diagram(db: Session, model_class: Type, project_id: int, **filters) -> Optional[dict]:
     """Return the standard API response dict if a diagram is cached, else None.
-
     Checks the latest diagram record matching the filters. If found, returns
     {"svg_url": ..., "plantuml_code": ..., "data": ...} directly.
-
     Args:
         db: SQLAlchemy session
         model_class: Diagram model class
         project_id: Project ID
         **filters: Extra filters (e.g., usecase_id for SequenceDiagram)
-
     Returns:
         The cached response dict or None
     """
@@ -115,27 +103,21 @@ def get_cached_diagram(db: Session, model_class: Type, project_id: int, **filter
         }
     return None
 
-
 def get_latest_sequence_by_usecase_idx(
     db: Session, project_id: int, usecase_idx: int
 ) -> Optional[dict]:
     """Return cached sequence diagram for a specific use case index.
-
     Directly filters by project_id and usecase_idx for unique identification.
-
     Returns:
         The cached response dict or None
     """
     return get_cached_diagram(db, SequenceDiagram, project_id, usecase_idx=usecase_idx)
 
-
 def get_all_sequence_diagrams(db: Session, project_id: int) -> list:
     """Return all sequence diagrams for a project, ordered by usecase_idx.
-
     Args:
         db: SQLAlchemy session
         project_id: Project ID
-
     Returns:
         List of SequenceDiagram ORM records
     """

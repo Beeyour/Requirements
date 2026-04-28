@@ -33,20 +33,17 @@ async def archive_existing_requirements(db: Session, project_id: int) -> None:
         Requirement.project_id == project_id,
         Requirement.is_active == True
     ).update({"is_active": False})
-    
     # Log the archival for each requirement
     archived_reqs = db.query(Requirement).filter(
         Requirement.project_id == project_id,
         Requirement.is_active == False
     ).all()
-    
     for req in archived_reqs:
         db.add(RequirementLog(
             requirement_id=req.id,
             change_reason="Requirements update - archived during regeneration",
             timestamp=datetime.now(timezone.utc)
         ))
-    
     db.commit()
 
 async def generate_srs_from_chat(db: Session, project: Project) -> List[Requirement]:
@@ -55,7 +52,6 @@ async def generate_srs_from_chat(db: Session, project: Project) -> List[Requirem
         ConversationHistory.project_id == project.id,
         ConversationHistory.is_archived == False
     ).order_by(ConversationHistory.timestamp.asc()).all()
-
     if not messages:
         raise HTTPException(status_code=400, detail="No conversation history available")
 
@@ -118,7 +114,6 @@ async def update_existing_requirement(
     )
     db.add(new_req)
     db.flush()
-    
     db.add(RequirementLog(
         requirement_id=new_req.id,
         change_reason=data.change_reason or "Manual edit",
@@ -136,8 +131,6 @@ async def update_existing_requirement(
     reqs_list = [{"id": r.id, "type": r.type, "description": r.description} for r in active_reqs]
     # Fixed: Removed the stray character at the end of this line
     edited_item = {"id": new_req.id, "type": new_req.type, "description": new_req.description}
-
     # Await AI analysis (Async compatible)
     conflict_report = await detect_conflicts(edited_item, reqs_list, project.model_provider, project.model_name)
-
     return new_req, conflict_report

@@ -8,28 +8,24 @@ export function useChat(projectId) {
   const [loading, setLoading] = useState(false)
   const [isSaturated, setIsSaturated] = useState(false)
   const [error, setError] = useState(null)
-
   const loadHistory = useCallback(async () => {
-    if (!projectId) return [] // إرجاع مصفوفة فارغة لحماية الكود
+    if (!projectId) return [] 
     setLoading(true)
     try {
       const { data } = await apiClient.get(`/chat/${projectId}/history`)
       setMessages(data)
-      
-      // 🌟 السطر السحري المفقود: إرجاع البيانات للصفحة لكي تفحصها
+
       return data 
-      
     } catch (err) {
       setError(err.response?.data?.detail || t('err_load_history'))
-      return [] // إرجاع مصفوفة فارغة في حالة الخطأ
+      return [] 
     } finally {
       setLoading(false)
     }
   }, [projectId, t])
-
   const startInterview = useCallback(async () => {
     if (!projectId) return null
-    setLoading(true) // 🌟 تشغيل الأنيميشن للتحميل عند البداية
+    setLoading(true)
     try {
       const { data } = await apiClient.post(`/chat/${projectId}/start`)
       setMessages([data])
@@ -38,14 +34,13 @@ export function useChat(projectId) {
       setError(err.response?.data?.detail || t('err_start_interview'))
       return null
     } finally {
-      setLoading(false) // 🌟 إيقاف التحميل
+      setLoading(false)
     }
   }, [projectId, t])
 
   const sendMessage = useCallback(
     async (content) => {
       if (!content.trim() || !projectId) return
-
       // 1. CREATE AN OPTIMISTIC MESSAGE
       const optimisticUserMessage = {
         id: Date.now(),
@@ -53,19 +48,15 @@ export function useChat(projectId) {
         content: content.trim(),
         timestamp: new Date().toISOString(),
       }
-
       // 2. UPDATE STATE IMMEDIATELY
       setMessages((prev) => [...prev, optimisticUserMessage])
-      
       setLoading(true) 
       setError(null)
-
       try {
         const { data } = await apiClient.post('/chat', {
           project_id: projectId,
           content: content.trim(),
         })
-
         // 3. OVERWRITE WITH REAL DATA
         setMessages(data.history)
         if (data.is_saturated) setIsSaturated(true) 
@@ -73,20 +64,17 @@ export function useChat(projectId) {
       } catch (err) {
         console.error("Chat API Error:", err)
         throw err; 
-
       } finally {
         setLoading(false)
       }
     },
     [projectId],
   )
-
   const resetConversation = useCallback(async () => {
     await apiClient.post('/chat/reset', { project_id: projectId })
     setMessages([])
     setIsSaturated(false)
   }, [projectId])
-
   return {
     messages,
     loading,

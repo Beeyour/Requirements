@@ -14,7 +14,6 @@ async def generate_class_json(formatted_requirements: str, provider: str, model:
     """Call LLM and return validated ClassDiagramJSON dict."""
     if not formatted_requirements:
         raise ValueError("No requirements provided.")
-
     user_content = f"Analyze these requirements and extract entities for a Class Diagram:\n{formatted_requirements}"
     raw = await call_llm(
         provider, model,
@@ -26,11 +25,9 @@ async def generate_class_json(formatted_requirements: str, provider: str, model:
     )
     return validate_and_parse_json(raw.strip(), ClassDiagramJSON)
 
-
 def generate_class_plantuml(data: dict) -> str:
     """Build PlantUML string from validated class diagram data."""
     return build_class_plantuml(data)
-
 
 async def generate_class(
     db: Session,
@@ -40,7 +37,6 @@ async def generate_class(
     model: str,
 ) -> dict:
     """Generate Class diagram, save to DB, return standard response.
-
     Returns:
         {"svg_url": str, "plantuml_code": str, "data": dict}
     """
@@ -56,5 +52,4 @@ async def generate_class(
         plantuml_code=plantuml_code,
         data=data,
     )
-
     return {"svg_url": svg_url, "plantuml_code": plantuml_code, "data": data}

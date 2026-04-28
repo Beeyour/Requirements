@@ -11,19 +11,15 @@ const PROVIDER_COLORS = {
   anthropic: 'text-orange-700 bg-orange-50 border-orange-200 hover:bg-orange-100',
   google:    'text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100',
 }
-
 export default function ModelSelector({ value, onChange, models }) {
   const { t } = useTranslation()
-
   const [provider, modelName] = (value || '').split(':')
   const colorClass = PROVIDER_COLORS[provider] || 'text-slate-700 bg-slate-50 border-slate-200 hover:bg-slate-100'
-
   return (
     <div className="flex items-center gap-3 py-2">
       <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
         {t('model_label')}:
       </span>
-
       <div className="relative group">
         {/* The "Badge" is now a styled select element */}
         <select
@@ -49,7 +45,6 @@ export default function ModelSelector({ value, onChange, models }) {
             </optgroup>
           ))}
         </select>
-
         {/* Custom Chevron Icon */}
         <div className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2">
           <svg 

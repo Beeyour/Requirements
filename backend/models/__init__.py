@@ -8,7 +8,6 @@ from .uml.class_diagram import ClassDiagram
 from .uml.activity_diagram import ActivityDiagram
 from .uml.sequence_diagram import SequenceDiagram
 
-
 __all__ = [
     "User",
     "Project",

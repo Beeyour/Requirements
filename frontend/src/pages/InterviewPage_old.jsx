@@ -62,8 +62,7 @@ export default function InterviewPage() {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  const currentLoadingId = useRef(null) // قفل التهيئة يعتمد على الـ ID
-
+  const currentLoadingId = useRef(null) 
   const { models } = useModels()
   const { messages, loading, isSaturated, error, loadHistory, startInterview, sendMessage, resetConversation } =
     useChat(projectId)
@@ -94,7 +93,6 @@ export default function InterviewPage() {
     }
   }
 
-  // --- التأثير 1: تنظيف البيانات القديمة عند الانتقال لمشروع جديد ---
   useEffect(() => {
     setProject(null)
     setRequirementsReady(false)
@@ -114,7 +112,6 @@ export default function InterviewPage() {
     })
   }, [projectId])
 
-  // --- التأثير 2: جلب بيانات المشروع ---
   useEffect(() => {
     let isMounted = true;
 
@@ -131,10 +128,7 @@ export default function InterviewPage() {
     return () => { isMounted = false };
   }, [projectId])
 
-  // --- التأثير 3: تهيئة المحادثة ---
-// --- التأثير 3: تهيئة المحادثة ---
   useEffect(() => {
-    // منع التكرار، لكن مع السماح لـ React Strict Mode بالعمل بشكل صحيح
     if (currentLoadingId.current === projectId) return;
     currentLoadingId.current = projectId;
 
@@ -143,13 +137,9 @@ export default function InterviewPage() {
     const setupChat = async () => {
       try {
         const history = await loadHistory();
-        
-        // إذا تم تدمير المكون (كما يحدث في Strict Mode)، أوقف العملية القديمة
         if (!isMounted) return; 
 
         const hasHistory = Array.isArray(history) && history.length > 0;
-        
-        // إذا لم يكن هناك تاريخ (مشروع جديد)، اطلب البداية
         if (!hasHistory) {
           await startInterview();
         }
@@ -165,7 +155,6 @@ export default function InterviewPage() {
 
     return () => {
       isMounted = false;
-      // السطر السحري لحل مشكلة Strict Mode: فك القفل عند خروج المستخدم أو تدمير المكون
       currentLoadingId.current = null; 
     };
   }, [projectId]);
@@ -272,7 +261,7 @@ export default function InterviewPage() {
 
   const handleReset = async () => {
     if (!window.confirm(t('archive_confirm'))) return
-    currentLoadingId.current = null; // فك القفل ليتمكن من البدء مجدداً
+    currentLoadingId.current = null; 
     await resetConversation()
     await startInterview()
   }

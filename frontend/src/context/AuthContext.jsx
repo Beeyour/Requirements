@@ -12,31 +12,26 @@ export function AuthProvider({ children }) {
       return null
     }
   })
-
   const persist = useCallback((tokenVal, userVal) => {
     setToken(tokenVal)
     setUser(userVal)
     localStorage.setItem('srs_token', tokenVal)
     localStorage.setItem('srs_user', JSON.stringify(userVal))
   }, [])
-
   const login = useCallback(async (email, password) => {
     const { data } = await apiClient.post('/auth/login', { email, password })
     persist(data.access_token, { id: data.user_id, email: data.email })
   }, [persist])
-
   const register = useCallback(async (email, password) => {
     const { data } = await apiClient.post('/auth/register', { email, password })
     persist(data.access_token, { id: data.user_id, email: data.email })
   }, [persist])
-
   const logout = useCallback(() => {
     setToken(null)
     setUser(null)
     localStorage.removeItem('srs_token')
     localStorage.removeItem('srs_user')
   }, [])
-
   return (
     <AuthContext.Provider value={{ user, token, login, register, logout, isAuthenticated: !!token }}>
       {children}

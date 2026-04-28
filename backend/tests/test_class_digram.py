@@ -14,13 +14,10 @@ async def test_generate_class_digram_prompt_structure(monkeypatch):
             '{"system_title":"Clinic","classes":[{"name":"Patient","attributes":[],"methods":[]}],'
             '"relationships":[]}'
         )
-
     monkeypatch.setattr("backend.services.uml.class_digram_service.call_llm", fake_llm)
-
     sample_req = "The user logs in."
     data = await generate_class_json(sample_req, "openai", "gpt-4o")
     prompt = generate_class_plantuml(data)
-
     assert "@startuml" in prompt
     assert "@enduml" in prompt
     assert "left to right direction" in prompt
@@ -39,17 +36,14 @@ async def test_generate_class_persists(monkeypatch):
             '{"system_title":"Clinic","classes":[{"name":"Patient","attributes":[],"methods":[]}],'
             '"relationships":[]}'
         )
-
     monkeypatch.setattr("backend.services.uml.class_digram_service.call_llm", fake_llm)
     monkeypatch.setattr(
         "backend.services.uml.class_digram_service.get_plantuml_svg",
         lambda _: "https://example.com/class.svg",
     )
-
     engine = create_engine("sqlite:///:memory:")
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base.metadata.create_all(bind=engine)
-
     db = TestingSessionLocal()
     try:
         result = await generate_class(

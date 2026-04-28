@@ -23,7 +23,6 @@ def parse_json_response(raw_text: str) -> Dict[str, Any]:
             "missing_areas": [],
         }
 
-
 def _build_interview_message(parsed: Dict[str, Any]) -> str:
     """Build the display message from parsed JSON, with fallback."""
     ack = (parsed.get("acknowledgment") or "").strip()
@@ -34,7 +33,6 @@ def _build_interview_message(parsed: Dict[str, Any]) -> str:
         return ack or question
     # Both empty — return a safe fallback question
     return "Could you tell me more about what you'd like the system to do?"
-
 
 DEFAULT_RETRY_QUESTION = (
     "I'd like to understand your project better. "
@@ -53,7 +51,6 @@ async def get_initial_greeting(app_name: str, provider: str, model: str) -> str:
     )
     parsed = parse_json_response(raw)
     message = _build_interview_message(parsed)
-
     # Retry once if the message is the fallback (both ack and question were empty)
     if message == DEFAULT_RETRY_QUESTION:
         raw = await call_llm(
@@ -66,7 +63,6 @@ async def get_initial_greeting(app_name: str, provider: str, model: str) -> str:
         )
         parsed = parse_json_response(raw)
         message = _build_interview_message(parsed)
-
     return message or "Let's start. What is the core purpose of your application?"
 
 async def get_interview_response(
@@ -86,7 +82,6 @@ async def get_interview_response(
     )
     parsed = parse_json_response(raw)
     message = _build_interview_message(parsed)
-
     # Retry once if both ack and question were empty
     if message == DEFAULT_RETRY_QUESTION:
         raw = await call_llm(
@@ -99,7 +94,6 @@ async def get_interview_response(
         )
         parsed = parse_json_response(raw)
         message = _build_interview_message(parsed)
-
     is_saturated = bool(parsed.get("is_saturated", False))
     return {
         "message": message,

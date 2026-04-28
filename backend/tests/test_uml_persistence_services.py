@@ -45,7 +45,6 @@ async def test_activity_uses_persisted_ssot_without_regenerating(monkeypatch):
             plantuml_code="@startuml\n@enduml",
             data={"system_title": "Clinic", "classes": [], "relationships": []},
         )
-
         async def fake_llm(*args, **kwargs):
             return (
                 '{"title":"Register Patient Flow","swimlanes":["Receptionist"],'
@@ -53,15 +52,12 @@ async def test_activity_uses_persisted_ssot_without_regenerating(monkeypatch):
                 '{"id":"n1","type":"end","label":"","swimlane_idx":0}],'
                 '"transitions":[{"from_idx":0,"to_idx":1,"condition":""}]}'
             )
-
         async def _should_not_be_called(*args, **kwargs):
             raise AssertionError("Prerequisite SSoT generation should not run when DB context exists.")
-
         monkeypatch.setattr("backend.services.uml.activity_digram_service.call_llm", fake_llm)
         monkeypatch.setattr("backend.services.uml.activity_digram_service.get_plantuml_svg", lambda _: "a.svg")
         monkeypatch.setattr("backend.services.uml.activity_digram_service.usecase_service.generate_usecase", _should_not_be_called)
         monkeypatch.setattr("backend.services.uml.activity_digram_service.class_digram_service.generate_class", _should_not_be_called)
-
         result = await generate_activity(
             db=db,
             project_id=15,
@@ -121,17 +117,14 @@ async def test_sequence_persists_with_latest_usecase_link(monkeypatch):
                 "relationships": [],
             },
         )
-
         async def fake_llm(*args, **kwargs):
             return (
                 '{"title":"Register Patient","participants":[{"name":"Receptionist","type":"actor"},'
                 '{"name":"PatientService","type":"participant"}],'
                 '"sequence":[{"type":"message","from_idx":0,"to_idx":1,"is_return":false,"text":"register()"}]}'
             )
-
         monkeypatch.setattr("backend.services.uml.sequence_digram_service.call_llm", fake_llm)
         monkeypatch.setattr("backend.services.uml.sequence_digram_service.get_plantuml_svg", lambda _: "s.svg")
-
         result = await generate_sequence(
             db=db,
             project_id=21,
@@ -141,7 +134,6 @@ async def test_sequence_persists_with_latest_usecase_link(monkeypatch):
             model="model",
         )
         assert result["svg_url"] == "s.svg"
-
         rows = db.query(SequenceDiagram).filter_by(project_id=21).all()
         assert len(rows) == 1
         assert rows[0].usecase_id == latest.id

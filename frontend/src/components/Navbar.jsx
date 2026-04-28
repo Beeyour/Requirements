@@ -7,18 +7,15 @@ export default function Navbar({ projectName, isDashboard }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
-
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
-
   const toggleLanguage = () => {
     const currentLang = i18n?.language || 'en';
     const newLang = currentLang.startsWith('en') ? 'ar' : 'en';
     i18n.changeLanguage(newLang);
   }
-
   return (
     <nav className="bg-transparent px-6 py-2 flex items-center justify-between">
       
@@ -46,7 +43,6 @@ export default function Navbar({ projectName, isDashboard }) {
           {projectName}
         </h3>
       </div>
-
       {/* RIGHT: Pill Buttons & Email */}
       <div className="flex items-center gap-4">
         <button
@@ -55,9 +51,7 @@ export default function Navbar({ projectName, isDashboard }) {
         >
           {t('change_language', 'عربي')}
         </button>
-
         <span className="text-slate-500 text-sm hidden sm:block">{user?.email}</span>
-        
         <button 
           onClick={handleLogout} 
           className="px-4 py-1.5 text-sm font-medium text-red-500 border border-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all duration-200"

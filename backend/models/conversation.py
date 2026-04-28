@@ -9,15 +9,12 @@ class ChatRole(str, enum.Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
 
-# Chat history and context management for AI interactions.
 class ConversationHistory(Base):
     __tablename__ = "conversation_history"
-
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), index=True, nullable=False)
     role = Column(SQLEnum(ChatRole), default=ChatRole.USER, nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_archived = Column(Boolean, default=False, nullable=False)
-
     project = relationship("Project", back_populates="conversations")

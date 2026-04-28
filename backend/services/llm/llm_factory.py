@@ -17,7 +17,6 @@ class LLMFactory:
         if not adapter_class:
             # Raise an error to prevent execution with an unsupported provider
             raise ValueError(f"Provider '{provider}' is not supported.")
-        
         # Returns a fresh instance of the requested adapter
         return adapter_class()
 

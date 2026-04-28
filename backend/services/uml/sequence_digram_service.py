@@ -18,16 +18,13 @@ async def generate_sequence_json(
     model: str,
 ) -> dict:
     """Call LLM and return validated SequenceDiagramJSON dict for a specific use case.
-
     Injects full SSoT JSON into the prompt with strict vocabulary constraints.
     """
     use_cases = usecase_data.get("use_cases", [])
     actors = usecase_data.get("actors", [])
     classes = class_data.get("classes", [])
-
     if not (0 <= usecase_idx < len(use_cases)):
         raise ValueError(f"Use case index {usecase_idx} is out of range.")
-
     target_uc = use_cases[usecase_idx]
 
     # Find which actors are linked to this use case
@@ -83,43 +80,35 @@ async def generate_sequence(
     model: str,
 ) -> dict:
     """Generate Sequence diagram with SSoT from DB, save to DB, return standard response.
-
     If SSoT (UseCase + Class) doesn't exist in DB, generates and persists them first.
     Saves SequenceDiagram with usecase_id linkage.
-
     Returns:
         {"svg_url": str, "plantuml_code": str, "data": dict}
     """
     # Query SSoT from DB
     usecase_data, class_data = get_ssot_context(db, project_id)
-
     # If SSoT missing, generate and persist them first
     if usecase_data is None:
         result = await usecase_service.generate_usecase(
             db, project_id, formatted_requirements, provider, model
         )
         usecase_data = result["data"]
-
     if class_data is None:
         result = await class_digram_service.generate_class(
             db, project_id, formatted_requirements, provider, model
         )
         class_data = result["data"]
-
     # Validate usecase_idx after ensuring we have data
     use_cases = usecase_data.get("use_cases", [])
     if not (0 <= usecase_idx < len(use_cases)):
         raise ValueError(f"Use case index {usecase_idx} is out of range.")
-
     # Find the UseCaseDiagram record for linking
     usecase_record = get_latest_diagram_record(db, UseCaseDiagram, project_id)
     usecase_id = usecase_record.id if usecase_record else None
-
     # Generate Sequence with SSoT context
     data = await generate_sequence_json(usecase_idx, usecase_data, class_data, provider, model)
     plantuml_code = generate_sequence_plantuml(data, project_id, usecase_idx)
     svg_url = get_plantuml_svg(plantuml_code)
-
     save_diagram(
         db=db,
         model_class=SequenceDiagram,

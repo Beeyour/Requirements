@@ -22,7 +22,6 @@ def format_requirements_for_ai(requirements: List[Requirement]) -> str:
         return ""
     return "\n".join(formatted_lines)
 
-
 async def generate_usecase_json(formatted_requirements: str, provider: str, model: str) -> dict:
     """Call LLM and return validated UseCaseJSON dict."""
     if not formatted_requirements:
@@ -39,11 +38,9 @@ async def generate_usecase_json(formatted_requirements: str, provider: str, mode
     )
     return validate_and_parse_json(raw.strip(), UseCaseJSON)
 
-
 def generate_plantuml(data: dict, project_id: int) -> str:
     """Build PlantUML string from validated use case data with interactive hyperlinks."""
     return build_usecase_plantuml(data, project_id)
-
 
 async def generate_usecase(
     db: Session,
@@ -53,14 +50,12 @@ async def generate_usecase(
     model: str,
 ) -> dict:
     """Generate Use Case diagram, save to DB, return standard response.
-
     Returns:
         {"svg_url": str, "plantuml_code": str, "data": dict}
     """
     data = await generate_usecase_json(formatted_requirements, provider, model)
     plantuml_code = generate_plantuml(data, project_id)
     svg_url = get_plantuml_svg(plantuml_code)
-
     save_diagram(
         db=db,
         model_class=UseCaseDiagram,

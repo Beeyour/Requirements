@@ -18,7 +18,6 @@ AVAILABLE_MODELS: Dict[str, Dict[str, str]] = {
 
 DEFAULT_PROVIDER = "openai"
 DEFAULT_MODEL = "gpt-5.4-mini"   # gpt-5.4-2026-03-05
-
 PROVIDER_LABELS = {
     "openai": "OpenAI",
     "google": "Google Gemini",

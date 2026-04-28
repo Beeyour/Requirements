@@ -9,30 +9,24 @@ class AnthropicAdapter(BaseLLMAdapter):
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise RuntimeError("ANTHROPIC_API_KEY environment variable is not set")
-        
         # Change to AsyncAnthropic to match the Agent layer's 'await' calls
         self.client = anthropic.AsyncAnthropic(api_key=self.api_key)
 
     async def call(self, model: str, system_prompt: str, messages: List[Dict[str, str]], 
             temperature: float, max_tokens: int, is_json: bool) -> str:
-        
         # Filter messages to include only 'user' and 'assistant' roles
         filtered_msgs = [m for m in messages if m["role"] in ("user", "assistant")]
-        
         # Ensure the conversation starts with a 'user' message as required by Anthropic
         while filtered_msgs and filtered_msgs[0]["role"] != "user":
             filtered_msgs.pop(0)
-
         if not filtered_msgs:
             filtered_msgs = [{"role": "user", "content": "Begin analysis."}]
-
         # Prepare system prompt with JSON enforcement if needed
         if is_json:
             if system_prompt:
                 system_prompt += "\n\nYou MUST respond with valid JSON only. Do not include any text outside the JSON structure."
             else:
                 system_prompt = "You MUST respond with valid JSON only. Do not include any text outside the JSON structure."
-
         # Using 'await' because the client is now async
         response = await self.client.messages.create(
             model=model,
@@ -42,5 +36,4 @@ class AnthropicAdapter(BaseLLMAdapter):
             # Anthropic temperature range is 0.0 to 1.0
             temperature=min(float(temperature), 1.0),
         )
-        
         return response.content[0].text

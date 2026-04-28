@@ -104,7 +104,6 @@ _CLASS_DIAGRAM_SYSTEM = """You are an Expert Software Architect. Your task is to
 }
 """
 
-
 _ACTIVITY_DIAGRAM_SYSTEM = """You are an Expert Business Analyst and System Architect. Your task is to analyze a business process and extract an Activity Diagram into a strict, validated JSON format using index-based references.
 
 ### SINGLE SOURCE OF TRUTH (SSoT) RULES:

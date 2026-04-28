@@ -6,7 +6,6 @@ export default function ConflictReport({ report }) {
     overlap: 'bg-amber-50 border-amber-200 text-amber-800',
     inconsistency: 'bg-orange-50 border-orange-200 text-orange-800',
   }
-
   return (
     <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
       <div className="flex items-center gap-2 mb-3">

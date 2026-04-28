@@ -1,22 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.database import get_db
-# Added UserLogin schema to avoid confusion in Frontend
-from backend.schemas.auth import UserCreate, Token, UserLogin 
+from backend.schemas.auth import UserCreate, Token, UserLogin
 from backend.services import auth_service
 
 router = APIRouter()
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Handles user registration and returns an access token
     if auth_service.get_user_by_email(db, user_data.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Save user to database
     user = auth_service.create_user(db, user_data)
-
-    # Generate JWT
     token_data = {"sub": str(user.id), "email": user.email}
     token = auth_service.create_access_token(token_data)
 
@@ -29,13 +24,11 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    # Authenticates user and returns an access token
-    # Using UserLogin ensures Frontend only sends email and password
+    # UserLogin (not UserCreate) so login only accepts email+password
     user = auth_service.get_user_by_email(db, user_data.email)
     if not user or not auth_service.verify_password(user_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Generate JWT
     token_data = {"sub": str(user.id), "email": user.email}
     token = auth_service.create_access_token(token_data)
 

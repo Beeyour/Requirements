@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
 import Navbar from '../components/Navbar'
 import ProjectCard from '../components/ProjectCard'
 import ModelSelector from '../components/ModelSelector'
@@ -11,16 +10,13 @@ import { useModels } from '../hooks/useModels'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-
   const { projects, loading, error, fetchProjects, createProject, deleteProject } = useProjects()
   const { models, defaultModel } = useModels()
-
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState('')
   const [selectedModel, setSelectedModel] = useState(defaultModel)
   const [creating, setCreating] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
-  
   const [viewMode, setViewMode] = useState('grid')
 
   useEffect(() => { fetchProjects() }, [fetchProjects])
@@ -47,7 +43,6 @@ export default function DashboardPage() {
     await deleteProject(id)
     setDeleteConfirm(null)
   }
-
 return (
     <div className="min-h-screen bg-slate-50">
       {/* Pass isDashboard={true} to trigger the text rendering */}
@@ -61,7 +56,6 @@ return (
               {projects.length} {projects.length !== 1 ? t('projects_plural') : t('project_singular')}
             </p>
           </div>
-          
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
               <button

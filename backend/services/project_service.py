@@ -32,7 +32,6 @@ def create_project(db: Session, user_id: int, data: ProjectCreate) -> Project:
         validate_model(data.model_provider, data.model_name)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
     # تم تصحيح الحقل هنا من name إلى app_name بناءً على خطأ التيرمينال
     db_project = Project(
         user_id=user_id,
@@ -54,7 +53,6 @@ def get_project_by_id(db: Session, project_id: int, user_id: int) -> Project:
         Project.id == project_id, 
         Project.user_id == user_id
     ).first()
-
     if not project:
         raise HTTPException(status_code=404, detail="Project not found or access denied")
     return project
@@ -67,11 +65,9 @@ def update_model_settings(db: Session, project_id: int, user_id: int, update: Pr
         validate_model(update.model_provider, update.model_name)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
     project = get_project_by_id(db, project_id, user_id)
     project.model_provider = update.model_provider
     project.model_name = update.model_name
-
     db.commit()
     db.refresh(project)
     return project

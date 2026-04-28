@@ -6,7 +6,6 @@ from datetime import datetime
 shared_config = ConfigDict(protected_namespaces=())
 
 # Request Schemas
-
 class ProjectCreate(BaseModel):
     # أضفنا الإعداد هنا لأن الحقول تبدأ بـ model_
     model_config = shared_config
@@ -15,7 +14,6 @@ class ProjectCreate(BaseModel):
     model_provider: str = "openai"
     model_name: str = "gpt-4o"
 
-
 class ProjectModelUpdate(BaseModel):
     # وأيضاً هنا
     model_config = shared_config
@@ -23,9 +21,7 @@ class ProjectModelUpdate(BaseModel):
     model_provider: str
     model_name: str
 
-
 # Response Schemas
-
 class ProjectResponse(BaseModel):
     id: int
     app_name: str
@@ -34,8 +30,6 @@ class ProjectResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     requirement_count: int
-
-
     model_config = ConfigDict(
         from_attributes=True,
         protected_namespaces=() 

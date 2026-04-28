@@ -5,9 +5,7 @@ export default function RequirementCard({ requirement, onEdit, hasConflict }) {
     requirement.type === 'Functional'
       ? 'bg-blue-100 text-blue-700 border-blue-200'
       : 'bg-purple-100 text-purple-700 border-purple-200'
-
   const borderColor = hasConflict ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
-
   return (
     <div className={`rounded-xl border p-4 transition-all ${borderColor}`}>
       <div className="flex items-start justify-between gap-3">

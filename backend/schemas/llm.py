@@ -8,6 +8,5 @@ class ModelInfoResponse(BaseModel):
     provider_labels: Dict[str, str]
     default_provider: str
     default_model: str
-
     # Standard config to handle Pydantic protected namespaces
     model_config = ConfigDict(protected_namespaces=())

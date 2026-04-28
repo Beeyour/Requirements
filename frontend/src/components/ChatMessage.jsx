@@ -5,23 +5,18 @@ export default function ChatMessage({ message }) {
   const { t, i18n } = useTranslation()
   const isUser = message.role === 'user'
   const { speak, stop, isSpeaking } = useTextToSpeech()
-
   // THE FIX: Ensure the string is treated as UTC
   const formatTime = (rawTimestamp) => {
     if (!rawTimestamp) return ''
-
     // If the string doesn't end with 'Z', add it to force UTC interpretation
     const utcString = rawTimestamp.endsWith('Z') ? rawTimestamp : `${rawTimestamp}Z`
-
     return new Date(utcString).toLocaleTimeString(i18n.language, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
     })
   }
-
   const time = formatTime(message.timestamp)
-
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       {/* AI Avatar */}
@@ -30,7 +25,6 @@ export default function ChatMessage({ message }) {
           AI
         </div>
       )}
-
       {/* Message Bubble Container */}
       <div className={`max-w-[75%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
         <div
@@ -41,11 +35,9 @@ export default function ChatMessage({ message }) {
         >
           {message.content}
         </div>
-
         {/* Time and Audio Controls Container */}
         <div className="flex items-center gap-2 mt-1 px-1">
           <span className="text-xs text-slate-400">{time}</span>
-
           {/* 3. ONLY show the speaker icon for AI messages */}
           {!isUser && (
             <button
@@ -68,7 +60,6 @@ export default function ChatMessage({ message }) {
           )}
         </div>
       </div>
-
       {/* User Avatar */}
       {isUser && (
         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-xs font-bold ms-2 flex-shrink-0 mt-1">

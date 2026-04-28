@@ -14,22 +14,18 @@ class GoogleAdapter(BaseLLMAdapter):
 
     async def call(self, model: str, system_prompt: str, messages: List[Dict[str, str]], 
             temperature: float, max_tokens: int, is_json: bool) -> str:
-        
         # Initialize the generative model with system instructions
         gen_model = genai.GenerativeModel(
             model_name=model,
             system_instruction=system_prompt,
         )
-
         # Gemini requires roles to be 'user' or 'model' (not 'assistant')
         history = []
         for msg in messages[:-1]:
             role = "user" if msg["role"] == "user" else "model"
             history.append({"role": role, "parts": [msg["content"]]})
-
         # Start a chat session with the converted history
         chat = gen_model.start_chat(history=history)
-
         # Configure generation parameters
         config_kwargs = {
             "max_output_tokens": max_tokens,
@@ -38,11 +34,9 @@ class GoogleAdapter(BaseLLMAdapter):
         if is_json:
             config_kwargs["response_mime_type"] = "application/json"
         config = genai.types.GenerationConfig(**config_kwargs)
-
         # Change: Use 'send_message_async' and 'await' to match the layer requirements
         response = await chat.send_message_async(
             messages[-1]["content"], 
             generation_config=config
         )
-        
         return response.text
