@@ -30,7 +30,4 @@ After deploying the SSoT UML storage changes, new UML diagram tables are auto-cr
 
 Legacy tables are no longer referenced by ORM models and should be dropped manually in PostgreSQL:
 
-```sql
-DROP TABLE usecase_logs, usecases;
-```
 
