@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import logo from '../imgs/logo.png'
 
 export default function LoginPage() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
   
-  // 1. Grab i18n along with t from the hook
   const { t, i18n } = useTranslation() 
 
   const [isRegister, setIsRegister] = useState(false)
@@ -16,7 +16,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // 2. Add the exact same toggle function we used in the Navbar
   const toggleLanguage = () => {
     const currentLang = i18n?.language || 'en';
     const newLang = currentLang.startsWith('en') ? 'ar' : 'en';
@@ -42,10 +41,8 @@ export default function LoginPage() {
   }
 
   return (
-    // Make sure this wrapper is relative so our absolute button positions correctly
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4 relative">
       
-      {/* --- NEW FLOATING LANGUAGE BUTTON --- */}
       <div className="absolute top-6 end-6">
         <button 
           onClick={toggleLanguage}
@@ -54,22 +51,21 @@ export default function LoginPage() {
           {t('change_language')}
         </button>
       </div>
-      {/* ------------------------------------ */}
 
       <div className="w-full max-w-sm">
         <div className="text-center mb-8 flex flex-col items-center">
+          
           {/* --- EDITED LOGO AND TITLE SECTION --- */}
-          {/* Replace original icon container with new dashboard-matching logo icon */}
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-white rounded-xl mb-4 shadow-sm border border-slate-200">
-            {/* Custom SVG approximating the dashboard logo */}
-            <svg className="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4l-4 8m0 0l4 8m0-16l4 8m-4 8l4-8" />
-            </svg>
-          </div>
-          {/* New text below the logo, matching color from dashboard page */}
-          <h1 className="text-3xl font-extrabold text-brand-600 mb-2">AnalystLM</h1>
-          {/* Original translated title and subtitle removed */}
+          {/* Replace src="/logo.png" with the actual path or imported variable of your image */}
+          <img 
+            src={logo} 
+            alt={t('srs_analyst', 'SRS Analyst Logo')} 
+            className="w-16 h-16 object-contain mb-3 drop-shadow-sm" 
+          />
+          {/* Text matching the dashboard brand color */}
+          <h1 className="text-3xl font-extrabold text-brand-500 mb-2">AnalystLM</h1>
           {/* -------------------------------------- */}
+
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
